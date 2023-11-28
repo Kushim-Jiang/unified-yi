@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unified Yi Character Manager</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<header class="header">
+    <h1>𖬝 Unified Yi <span class="yi-demo">ꆈꌠ</span></h1>
+    <nav>
+        <a href="/" class="active">📚 Browse</a>
+        <a href="/align.html">🔗 Align</a>
+    </nav>
+</header>
+
+<div class="container">
+
+    <!-- Source Selection -->
+    <section style="margin-bottom:20px;">
+        <h2 style="margin-bottom:12px;color:var(--text-secondary);font-size:15px;">📖 Data Sources</h2>
+        <div class="source-grid" id="sourceGrid">
+            <div class="loading"><span class="spinner"></span> Loading sources...</div>
+        </div>
+    </section>
+
+    <!-- Character Browser -->
+    <section>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <h2 style="color:var(--text-secondary);font-size:15px;">
+                🔤 Characters — <span id="currentSourceLabel">—</span>
+                (<span id="totalChars">0</span> chars)
+            </h2>
+        </div>
+
+        <div class="toolbar">
+            <input type="text" id="searchInput" placeholder="Search pronunciation, meaning, or ref...">
+            <button onclick="doSearch()" class="btn-primary">🔍 Search</button>
+            <button onclick="clearSearch()" class="btn">✕ Clear</button>
+        </div>
+
+        <div class="char-table-wrap">
+            <table class="char-table">
+                <thead>
+                    <tr>
+                        <th style="width:60px;">Glyph</th>
+                        <th style="width:130px;">Ref</th>
+                        <th style="width:180px;">Pronunciation</th>
+                        <th>Meaning</th>
+                    </tr>
+                </thead>
+                <tbody id="charTableBody">
+                    <tr><td colspan="4" style="text-align:center;padding:40px;color:var(--text-secondary);">Select a source above to browse characters</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="pagination" id="pagination"></div>
+    </section>
+
+    <!-- Character Detail & Suggestions -->
+    <section id="charDetail" style="margin-top:24px;"></section>
+
+    <!-- Saved Alignments Summary -->
+    <section style="margin-top:32px;">
+        <h2 style="color:var(--text-secondary);font-size:15px;margin-bottom:8px;">
+            🔗 Saved Alignments (<span id="alignmentCount">0</span>)
+        </h2>
+        <div class="char-table-wrap">
+            <table class="char-table">
+                <thead>
+                    <tr>
+                        <th style="width:60px;">Glyph A</th>
+                        <th>Source A</th>
+                        <th style="width:40px;"></th>
+                        <th style="width:60px;">Glyph B</th>
+                        <th>Source B</th>
+                        <th style="width:50px;"></th>
+                    </tr>
+                </thead>
+                <tbody id="alignTableBody">
+                    <tr><td colspan="6" style="text-align:center;padding:20px;"><span class="spinner"></span></td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+</div>
+
+<script src="/js/app.js"></script>
+</body>
+</html>
