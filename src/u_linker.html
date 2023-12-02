@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>U-source Linker</title>
+
+    <style>
+        textarea {
+            font-family: "Iosevka";
+        }
+
+        table {
+            width: 100%;
+        }
+
+        td.glyf {
+            font-family: "unified-yi-ideograph";
+            font-size: 30px;
+            width: 10%;
+        }
+
+        td.src {
+            font-family: "Iosevka";
+            width: 20%;
+        }
+
+        td.pron {
+            font-family: "Brill";
+            font-feature-settings: "lnum";
+            width: 15%;
+        }
+
+        td.mean {
+            font-family: "Brill";
+            font-feature-settings: "lnum";
+            width: 55%;
+        }
+    </style>
+</head>
+
+<script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script type="text/javascript" language="javascript">
+    var show_data = function (name, data) {
+        document.getElementById(name).value = JSON.stringify(data);
+    }
+
+    // show U0 and U1
+    $.ajax({ url: "../temp/u0.json", dataType: "json", success: function (data) { show_data("u0", data) } });
+    $.ajax({ url: "../temp/u1.json", dataType: "json", success: function (data) { show_data("u1", data) } });
+</script>
+
+<script>
+    function show_input(number) {
+        // get character
+        const u0_data = JSON.parse(document.getElementById("u0").value);
+        var u0_char = u0_data[number - 2];
+
+        // clear row
+        var input = document.getElementById("input");
+        while (input.children.length > 0) {
+            input.removeChild(input.firstChild);
+        }
+
+        // add a row
+        var tr_item = document.createElement("tr");
+        document.getElementById("input").appendChild(tr_item);
+        for (var index = 0; index < 4; index++) {
+            var td_item = document.createElement("td");
+            td_item.innerHTML = [u0_char.glyf, u0_char.src, u0_char.pron, u0_char.mean][index];
+            td_item.setAttribute("class", ["glyf", "src", "pron", "mean"][index]);
+            tr_item.appendChild(td_item);
+        }
+    }
+
+    function similarity(str1, str2) {
+        var set_str1 = new Set(Array.from(str1));
+        var set_str2 = new Set(Array.from(str2));
+        var intersect = Array.from(set_str1).filter(function (value) { return Array.from(set_str2).indexOf(value) > -1 });
+        return (intersect.length / set_str1.size).toFixed(4);
+    }
+
+    function bold(str1, str2) {
+        var set_str1 = new Set(Array.from(str1));
+        var set_str2 = new Set(Array.from(str2));
+        var intersect = Array.from(set_str1).filter(function (value) { return Array.from(set_str2).indexOf(value) > -1 });
+
+        res = "";
+        for (index in str1) {
+            var char = str1[index];
+            if (intersect.indexOf(char) > -1) {
+                res += "<b>" + char + "</b>";
+            } else {
+                res += char;
+            }
+        }
+        return res;
+    }
+
+    function show_output(number) {
+        // get character
+        const u0_data = JSON.parse(document.getElementById("u0").value);
+        const u1_data = JSON.parse(document.getElementById("u1").value);
+        var u0_char = u0_data[number - 2];
+
+        // clear row
+        var output = document.getElementById("output");
+        while (output.children.length > 0) {
+            output.removeChild(output.firstChild);
+        }
+
+        // generate data
+        for (var index in u1_data) {
+            u1_char = u1_data[index];
+            if (similarity(u0_char.pron, u1_char.pron) > 0.6 && similarity(u0_char.mean, u1_char.mean) > 0.6) {
+                // add a row
+                var tr_item = document.createElement("tr");
+                document.getElementById("output").appendChild(tr_item);
+                for (var index = 0; index < 4; index++) {
+                    var td_item = document.createElement("td");
+                    td_item.innerHTML = [
+                        u1_char.glyf,
+                        u1_char.src,
+                        bold(u1_char.pron, u0_char.pron) + "<br><" + similarity(u0_char.pron, u1_char.pron) + ">",
+                        bold(u1_char.mean, u0_char.mean) + "<br><" + similarity(u0_char.mean, u1_char.mean) + ">"
+                    ][index]
+                    td_item.setAttribute("class", ["glyf", "src", "pron", "mean"][index]);
+                    tr_item.appendChild(td_item);
+                }
+            }
+        }
+
+    }
+
+    function goto_number(number) {
+        document.getElementById("num").value = number;
+        show_input(number);
+        show_output(number);
+    }
+</script>
+
+<script>
+    window.onkeydown = function () {
+        var number = Math.trunc(document.getElementById("num").value);
+        if (event.keyCode === 13) {
+            goto_number(number);
+        }
+        else if (event.ctrlKey && event.shiftKey && event.keyCode === 37) {
+            goto_number(number - 40);
+        }
+        else if (event.ctrlKey && event.shiftKey && event.keyCode === 39) {
+            goto_number(number + 40);
+        }
+        else if (event.ctrlKey && event.keyCode === 37) {
+            goto_number(number - 1);
+        }
+        else if (event.ctrlKey && event.keyCode === 39) {
+            goto_number(number + 1);
+        }
+    }
+</script>
+
+<body>
+    <p>data</p>
+    <textarea name="u0" id="u0" cols="50" rows="2"></textarea>
+    <textarea name="u1" id="u1" cols="50" rows="2"></textarea>
+
+    <p>input</p>
+    <input type="text" name="num" id="num">
+    <table id="input"></table>
+
+    <p>output</p>
+    <table id="output"></table>
+</body>
+
+</html>
