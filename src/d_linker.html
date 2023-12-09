@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>D-source Linker</title>
+
+    <style>
+        textarea {
+            font-family: "Iosevka";
+        }
+
+        table {
+            width: 100%;
+        }
+
+        td.glyf {
+            font-family: "unified-yi-ideograph";
+            font-size: 30px;
+            width: 10%;
+        }
+
+        td.src {
+            font-family: "Iosevka";
+            width: 20%;
+        }
+
+        td.pron {
+            font-family: "Brill";
+            font-feature-settings: "lnum";
+            width: 15%;
+        }
+
+        td.mean {
+            font-family: "Brill";
+            font-feature-settings: "lnum";
+            width: 55%;
+        }
+    </style>
+</head>
+
+<script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script type="text/javascript" language="javascript">
+    var show_data = function (name, data) {
+        document.getElementById(name).value = JSON.stringify(data);
+    }
+
+    // show U0 and U1
+    $.ajax({ url: "../temp/d1.json", dataType: "json", success: function (data) { show_data("d1", data) } });
+    $.ajax({ url: "../temp/d0.json", dataType: "json", success: function (data) { show_data("d0", data) } });
+</script>
+
+<script>
+    function show_input(number) {
+        // get character
+        const d1_data = JSON.parse(document.getElementById("d1").value);
+        var d1_char = d1_data[number - 2];
+
+        // clear row
+        var input = document.getElementById("input");
+        while (input.children.length > 0) {
+            input.removeChild(input.firstChild);
+        }
+
+        // add a row
+        var tr_item = document.createElement("tr");
+        document.getElementById("input").appendChild(tr_item);
+        for (var index = 0; index < 4; index++) {
+            var td_item = document.createElement("td");
+            td_item.innerHTML = [d1_char.glyf, d1_char.src, d1_char.pron, d1_char.mean][index];
+            td_item.setAttribute("class", ["glyf", "src", "pron", "mean"][index]);
+            tr_item.appendChild(td_item);
+        }
+    }
+
+    function str_similar(str1, str2) {
+        var set_str1 = new Set(Array.from(str1));
+        var set_str2 = new Set(Array.from(str2));
+        var intersect = Array.from(set_str1).filter(function (value) { return Array.from(set_str2).indexOf(value) > -1 });
+        return intersect.length;
+    }
+
+    function bold(str1, str2) {
+        var set_str1 = new Set(Array.from(str1));
+        var set_str2 = new Set(Array.from(str2));
+        var intersect = Array.from(set_str1).filter(function (value) { return Array.from(set_str2).indexOf(value) > -1 });
+
+        res = "";
+        for (index in str1) {
+            var char = str1[index];
+            if (intersect.indexOf(char) > -1) {
+                res += "<b>" + char + "</b>";
+            } else {
+                res += char;
+            }
+        }
+        return res;
+    }
+
+    function show_output(number) {
+        // get character
+        const d1_data = JSON.parse(document.getElementById("d1").value);
+        const d0_data = JSON.parse(document.getElementById("d0").value);
+        var d1_char = d1_data[number - 2];
+
+        // clear row
+        var output = document.getElementById("output");
+        while (output.children.length > 0) {
+            output.removeChild(output.firstChild);
+        }
+
+        // generate data
+        var data = [];
+        for (var index in d0_data) {
+            d0_char = d0_data[index];
+            if (str_similar(d1_char.pron, d0_char.pron) > 0.1 && str_similar(d1_char.mean, d0_char.mean) > 0.1) {
+                data.push([
+                    d0_char.glyf,
+                    d0_char.src,
+                    bold(d0_char.pron, d1_char.pron),
+                    str_similar(d1_char.pron, d0_char.pron),
+                    bold(d0_char.mean, d1_char.mean),
+                    str_similar(d1_char.mean, d0_char.mean)
+                ])
+            }
+        }
+
+        // sort data
+        data.sort(function (char1, char2) {
+            return (char2[3] + 10 * char2[5] - char1[3] - 10 * char1[5]);
+        });
+
+        // show data
+        for (var index in data) {
+            datum = data[index];
+
+            var tr_item = document.createElement("tr");
+            document.getElementById("output").appendChild(tr_item);
+            for (var index = 0; index < 4; index++) {
+                var td_item = document.createElement("td");
+                td_item.innerHTML = [
+                    datum[0],
+                    datum[1],
+                    datum[2] + "<br><" + datum[3].toFixed(4) + ">",
+                    datum[4] + "<br><" + datum[5].toFixed(4) + ">"
+                ][index]
+                td_item.setAttribute("class", ["glyf", "src", "pron", "mean"][index]);
+                tr_item.appendChild(td_item);
+            }
+        }
+    }
+
+    function goto_number(number) {
+        document.getElementById("num").value = number;
+        show_input(number);
+        show_output(number);
+    }
+</script>
+
+<script>
+    window.onkeydown = function () {
+        var number = Math.trunc(document.getElementById("num").value);
+        if (event.keyCode === 13) {
+            goto_number(number);
+        }
+        else if (event.ctrlKey && event.keyCode === 40) {
+            goto_number(number - 1);
+        }
+        else if (event.ctrlKey && event.keyCode === 38) {
+            goto_number(number + 1);
+        }
+    }
+</script>
+
+<body>
+    <table id="main_table">
+        <tr style="vertical-align: top;">
+            <td id="left">
+                <p>data</p>
+                <textarea name="d1" id="d1" cols="50" rows="2"></textarea>
+                <textarea name="d0" id="d0" cols="50" rows="2"></textarea>
+
+                <p>input</p>
+                <input type="text" name="num" id="num">
+                <table id="input"></table>
+
+                <p>output</p>
+                <table id="output"></table>
+            </td>
+            <td id="right">
+                <textarea name="" id="" cols="30" rows="50"></textarea>
+            </td>
+        </tr>
+    </table>
+</body>
+
+</html>
