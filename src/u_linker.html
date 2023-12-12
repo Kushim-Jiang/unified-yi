@@ -15,6 +15,15 @@
             width: 100%;
         }
 
+        td.num {
+            font-family: "Iosevka";
+            width: 5%;
+        }
+
+        .data {
+            resize: none;
+        }
+
         td.glyf {
             font-family: "unified-yi-ideograph";
             font-size: 30px;
@@ -35,7 +44,12 @@
         td.mean {
             font-family: "Brill";
             font-feature-settings: "lnum";
-            width: 55%;
+            width: 50%;
+        }
+
+        #map {
+            font-family: "unified-yi-ideograph";
+            resize: none;
         }
     </style>
 </head>
@@ -66,10 +80,10 @@
         // add a row
         var tr_item = document.createElement("tr");
         document.getElementById("input").appendChild(tr_item);
-        for (var index = 0; index < 4; index++) {
+        for (var index = 0; index < 5; index++) {
             var td_item = document.createElement("td");
-            td_item.innerHTML = [u0_char.glyf, u0_char.src, u0_char.pron, u0_char.mean][index];
-            td_item.setAttribute("class", ["glyf", "src", "pron", "mean"][index]);
+            td_item.innerHTML = [number, u0_char.glyf, u0_char.src, u0_char.pron, u0_char.mean][index];
+            td_item.setAttribute("class", ["num", "glyf", "src", "pron", "mean"][index]);
             tr_item.appendChild(td_item);
         }
     }
@@ -78,7 +92,7 @@
         var set_str1 = new Set(Array.from(str1));
         var set_str2 = new Set(Array.from(str2));
         var intersect = Array.from(set_str1).filter(function (value) { return Array.from(set_str2).indexOf(value) > -1 });
-        return intersect.length / set_str1.size;
+        return intersect.length;
     }
 
     function bold(str1, str2) {
@@ -114,7 +128,7 @@
         var data = [];
         for (var index in u1_data) {
             u1_char = u1_data[index];
-            if (str_similar(u0_char.pron, u1_char.pron) > 0.6 && str_similar(u0_char.mean, u1_char.mean) > 0.6) {
+            if (str_similar(u0_char.pron, u1_char.pron) > 0.1 && str_similar(u0_char.mean, u1_char.mean) > 0.1) {
                 data.push([
                     u1_char.glyf,
                     u1_char.src,
@@ -128,7 +142,7 @@
 
         // sort data
         data.sort(function (char1, char2) {
-            return (char2[3] + char2[5] - char1[3] - char1[5]);
+            return (char2[3] + 10 * char2[5] - char1[3] - 10 * char1[5]);
         });
 
         // show data
@@ -137,15 +151,16 @@
 
             var tr_item = document.createElement("tr");
             document.getElementById("output").appendChild(tr_item);
-            for (var index = 0; index < 4; index++) {
+            for (var ind = 0; ind < 5; ind++) {
                 var td_item = document.createElement("td");
                 td_item.innerHTML = [
+                    index,
                     datum[0],
                     datum[1],
                     datum[2] + "<br><" + datum[3].toFixed(4) + ">",
                     datum[4] + "<br><" + datum[5].toFixed(4) + ">"
-                ][index]
-                td_item.setAttribute("class", ["glyf", "src", "pron", "mean"][index]);
+                ][ind]
+                td_item.setAttribute("class", ["num", "glyf", "src", "pron", "mean"][ind]);
                 tr_item.appendChild(td_item);
             }
         }
@@ -162,13 +177,19 @@
     window.onkeydown = function () {
         var number = Math.trunc(document.getElementById("num").value);
         if (event.keyCode === 13) {
-            goto_number(number);
-        }
-        else if (event.ctrlKey && event.keyCode === 40) {
-            goto_number(number - 40);
-        }
-        else if (event.ctrlKey && event.keyCode === 38) {
-            goto_number(number + 40);
+            if (document.getElementById("index").value === "") {
+                index_value = -1;
+            }
+            else {
+                index_value = Math.trunc(document.getElementById("index").value);
+            }
+            if (index_value != -1) {
+                input_string = document.getElementById("input").children[0].children[1].innerHTML;
+                output_string = document.getElementById("output").children[index_value].children[1].innerHTML;
+                document.getElementById("map").value += input_string + ": " + output_string + "\n";
+            }
+            goto_number(number + 1);
+            document.getElementById("index").value = "";
         }
         else if (event.keyCode === 40) {
             goto_number(number - 1);
@@ -179,17 +200,28 @@
     }
 </script>
 
+
 <body>
-    <p>data</p>
-    <textarea name="u0" id="u0" cols="50" rows="2"></textarea>
-    <textarea name="u1" id="u1" cols="50" rows="2"></textarea>
+    <table id="main_table">
+        <tr style="vertical-align: top;">
+            <td id="left">
+                <p>data</p>
+                <textarea class="data" name="u0" id="u0" cols="50" rows="2"></textarea>
+                <textarea class="data" name="u1" id="u1" cols="50" rows="2"></textarea>
 
-    <p>input</p>
-    <input type="text" name="num" id="num">
-    <table id="input"></table>
+                <p>input</p>
+                <input type="text" name="num" id="num">
+                <input type="text" name="index" id="index">
+                <table id="input"></table>
 
-    <p>output</p>
-    <table id="output"></table>
+                <p>output</p>
+                <table id="output"></table>
+            </td>
+            <td id="right">
+                <textarea name="map" id="map" cols="30" rows="50" readonly></textarea>
+            </td>
+        </tr>
+    </table>
 </body>
 
 </html>
