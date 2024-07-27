@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-data_dir = Path(__file__).parent.parent / "data"
+data_dir = Path(__file__).parent.parent / "book"
 
 
 def to_json(file: Path):
