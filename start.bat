@@ -30,9 +30,14 @@ for /f "tokens=2" %%a in ('tasklist ^| findstr /i "uvicorn" 2^>nul') do (
 echo   Port 8080 is clear.
 echo.
 
+:: ─── Activate venv if exists ───
+if exist "%~dp0.venv\Scripts\activate.bat" (
+    call "%~dp0.venv\Scripts\activate.bat"
+)
+
 :: ─── Install dependencies ───
 echo [2/3] Installing Python dependencies...
-D:/Softwares/python/0313/main/python.exe -m pip install -q fastapi uvicorn pyyaml
+python -m pip install -q fastapi uvicorn pyyaml
 echo   Dependencies ready.
 echo.
 
@@ -48,6 +53,6 @@ echo ============================================
 echo.
 
 cd /d "%~dp0"
-D:/Softwares/python/0313/main/python.exe src/backend/main.py
+python src/backend/main.py
 
 pause

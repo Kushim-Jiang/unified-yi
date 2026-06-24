@@ -8,44 +8,35 @@
 - IPA 距离 & 语义相似度 & 部首笔画相似度
 """
 
-import json
+import re
 from pathlib import Path
 
-import yaml
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
 
-from ipa_distance import (
-    syllable_distance,
-    find_similar_by_pronunciation,
-)
-from meaning_similarity import (
-    meaning_similarity,
-    find_similar_by_meaning,
-    combined_similarity,
-)
+from models import CharacterUpdate, AlignmentGroupCreate, SuggestBatchInput
+from services import DataLoader, AlignmentManager
+from ipa_distance import syllable_distance, find_similar_by_pronunciation
+from meaning_similarity import meaning_similarity, find_similar_by_meaning
 from radical_similarity import (
     radical_stroke_similarity,
     find_similar_by_radical_stroke,
-    get_char_rs,
+    load_radical_order,
 )
 
 # ─── 路径配置 ──────────────────────────────────────────────────
-# BASE_DIR = repo root (go up 3 levels from src/backend/)
 BASE_DIR = Path(__file__).parent.parent.parent
-BOOK_DIR = BASE_DIR / "book"
-MAP_DIR = BASE_DIR / "map"
-FONT_DIR = BASE_DIR / "font"
-RS_DIR = BASE_DIR / "rs"
 WEB_DIR = BASE_DIR / "src" / "frontend"
-ALIGNMENTS_FILE = BASE_DIR / "alignments.json"
+FONT_DIR = BASE_DIR / "font"
+
+# ─── 服务初始化 ────────────────────────────────────────────────
+loader = DataLoader(BASE_DIR)
+alignment_mgr = AlignmentManager(loader)
 
 # ─── 应用初始化 ────────────────────────────────────────────────
-
-app = FastAPI(title="Unified Yi Character Manager", version="1.1.0")
+app = FastAPI(title="Unified Yi Character Manager", version="1.2.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -56,141 +47,21 @@ app.add_middleware(
 )
 
 
-# ─── 数据加载 ──────────────────────────────────────────────────
+# ══════════════════════════════════════════════════════════════
+# API 路由
+# ══════════════════════════════════════════════════════════════
 
 
-def load_tsv(filename: str) -> list[dict]:
-    """加载 book/ TSV 文件为字典列表，并尝试附加 RS 信息。"""
-    filepath = BOOK_DIR / f"{filename}.tsv"
-    if not filepath.exists():
-        raise FileNotFoundError(f"Source file not found: {filename}.tsv")
-    with filepath.open(encoding="utf-8") as f:
-        lines = f.readlines()
-    data = []
-    for line in lines[1:]:
-        line = line.strip()
-        if not line:
-            continue
-        parts = line.split("\t")
-        if len(parts) >= 4:
-            data.append(
-                {
-                    "glyph": parts[0],
-                    "src_ref": parts[1],
-                    "pronunciation": parts[2],
-                    "meaning": parts[3],
-                }
-            )
-    # 附加 RS 信息
-    rs_data = _load_rs_file(filename)
-    for char in data:
-        rs = rs_data.get(char["glyph"])
-        if rs:
-            char["radical"] = rs["radical"]
-            char["other_stroke"] = rs["other_stroke"]
-    return data
-
-
-def _load_rs_file(source: str) -> dict[str, dict]:
-    """加载 rs/{source}.tsv。"""
-    filepath = RS_DIR / f"{source}.tsv"
-    if not filepath.exists():
-        return {}
-    with filepath.open(encoding="utf-8") as f:
-        lines = f.readlines()
-    data = {}
-    for line in lines[1:]:
-        line = line.strip()
-        if not line:
-            continue
-        parts = line.split("\t")
-        if len(parts) >= 3:
-            data[parts[0]] = {
-                "radical": parts[1],
-                "other_stroke": int(parts[2]) if parts[2].strip().isdigit() else 0,
-            }
-    return data
-
-
-def load_yaml(filename: str) -> dict:
-    """加载 YAML 文件。"""
-    filepath = MAP_DIR / f"{filename}.yaml"
-    if not filepath.exists():
-        filepath = RS_DIR / f"{filename}.yaml"
-    if not filepath.exists():
-        return {}
-    with filepath.open(encoding="utf-8") as f:
-        return yaml.safe_load(f) or {}
-
-
-def load_alignments() -> list[dict]:
-    """加载已保存的对齐数据。"""
-    if ALIGNMENTS_FILE.exists():
-        with ALIGNMENTS_FILE.open(encoding="utf-8") as f:
-            return json.load(f)
-    return []
-
-
-def save_alignments(data: list[dict]):
-    """保存对齐数据。"""
-    with ALIGNMENTS_FILE.open("w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
-
-
-def load_all_data() -> dict[str, list[dict]]:
-    """加载所有书籍数据到内存缓存。"""
-    data = {}
-    for tsv_file in sorted(BOOK_DIR.glob("*.tsv")):
-        source_name = tsv_file.stem
-        data[source_name] = load_tsv(source_name)
-    return data
-
-
-# 全局缓存
-DATA_CACHE: dict[str, list[dict]] = {}
-ALIGNMENTS_CACHE: list[dict] = []
-
-
-def get_data() -> dict[str, list[dict]]:
-    global DATA_CACHE
-    if not DATA_CACHE:
-        DATA_CACHE = load_all_data()
-    return DATA_CACHE
-
-
-def get_alignments() -> list[dict]:
-    global ALIGNMENTS_CACHE
-    if not ALIGNMENTS_CACHE:
-        ALIGNMENTS_CACHE = load_alignments()
-    return ALIGNMENTS_CACHE
-
-
-# ─── 来源元信息 ────────────────────────────────────────────────
-
-SOURCE_META = {
-    "u0": {"name": "通用彝文字典 (2016)", "region": "通用", "year": 2016, "group": "unified"},
-    "u1": {"name": "滇川黔桂彝文字典 (2001)", "region": "通用", "year": 2001, "group": "unified"},
-    "q0": {"name": "简明彝汉字典 贵州本 (2018)", "region": "贵州", "year": 2018, "group": "guizhou"},
-    "d0": {"name": "云南省规范彝文彝汉词典 (2014)", "region": "云南", "year": 2014, "group": "yunnan"},
-    "d1": {"name": "云南规范彝文字汇本 (1991+)", "region": "云南", "year": 1991, "group": "yunnan"},
-    "d2": {"name": "云南省十四种民族文字方案集合", "region": "云南", "year": None, "group": "yunnan"},
-    "d3": {"name": "滇南彝文字典 (2005)", "region": "云南", "year": 2005, "group": "yunnan"},
-    "d4": {"name": "彝汉简明词典 (1984)", "region": "云南", "year": 1984, "group": "yunnan"},
-    "d5": {"name": "彝汉字典 楚雄本 (1995)", "region": "云南", "year": 1995, "group": "yunnan"},
-    "d6": {"name": "古彝文常用字典 (2014)", "region": "云南", "year": 2014, "group": "yunnan"},
-}
-
-
-# ─── API 路由 ──────────────────────────────────────────────────
+# ─── 来源 API ────────────────────────────────────────────────
 
 
 @app.get("/api/sources")
 def list_sources():
     """列出所有数据来源。"""
-    data = get_data()
+    data = loader.get_data()
     sources = []
     for key in sorted(data.keys()):
-        meta = SOURCE_META.get(key, {"name": key, "region": "未知", "year": None, "group": "other"})
+        meta = loader.SOURCE_META.get(key, {"name": key, "region": "未知", "year": None, "group": "other"})
         sources.append(
             {
                 "id": key,
@@ -204,6 +75,9 @@ def list_sources():
     return sources
 
 
+# ─── 字符 API ────────────────────────────────────────────────
+
+
 @app.get("/api/characters/{source}")
 def list_characters(
     source: str,
@@ -212,12 +86,11 @@ def list_characters(
     search: str = Query("", description="搜索关键词"),
 ):
     """列出指定来源的字符（分页）。"""
-    data = get_data()
+    data = loader.get_data()
     if source not in data:
         raise HTTPException(status_code=404, detail=f"Source '{source}' not found")
 
     characters = data[source]
-
     if search:
         search_lower = search.lower()
         characters = [
@@ -246,10 +119,9 @@ def list_characters(
 @app.get("/api/character/{source}/{src_ref}")
 def get_character(source: str, src_ref: str):
     """获取单个字符的详细信息（含 RS 信息）。"""
-    data = get_data()
+    data = loader.get_data()
     if source not in data:
         raise HTTPException(status_code=404, detail=f"Source '{source}' not found")
-
     for char in data[source]:
         if char["src_ref"] == src_ref:
             return char
@@ -259,10 +131,9 @@ def get_character(source: str, src_ref: str):
 @app.get("/api/character/by-glyph/{source}")
 def get_character_by_glyph(source: str, glyph: str = Query(...)):
     """通过字形查找字符。"""
-    data = get_data()
+    data = loader.get_data()
     if source not in data:
         raise HTTPException(status_code=404, detail=f"Source '{source}' not found")
-
     for char in data[source]:
         if char["glyph"] == glyph:
             return char
@@ -277,7 +148,7 @@ def search_all(
     page_size: int = Query(50, ge=1, le=200),
 ):
     """在所有来源中搜索字符。"""
-    data = get_data()
+    data = loader.get_data()
     sources_to_search = [source] if source and source in data else list(data.keys())
 
     results = []
@@ -305,99 +176,115 @@ def search_all(
     }
 
 
-# ─── 对齐 API ──────────────────────────────────────────────────
+# ─── 字符更新 API（直接修改 book TSV）───────────────────────
 
 
-class AlignmentCreate(BaseModel):
-    source_a: str
-    src_ref_a: str
-    source_b: str
-    src_ref_b: str
-    note: str = ""
+@app.put("/api/characters/{source}/{src_ref}")
+def update_character(source: str, src_ref: str, update: CharacterUpdate):
+    """更新指定字符的 pronunciation 和 meaning（直接修改 TSV 文件）。"""
+    data = loader.get_data()
+    if source not in data:
+        raise HTTPException(status_code=404, detail=f"Source '{source}' not found")
+
+    found = None
+    for char in data[source]:
+        if char["src_ref"] == src_ref:
+            found = char
+            break
+    if found is None:
+        raise HTTPException(status_code=404, detail=f"Character '{src_ref}' not found in '{source}'")
+
+    # Update in memory
+    found["pronunciation"] = update.pronunciation
+    found["meaning"] = update.meaning
+
+    # Rewrite the TSV file
+    filepath = loader.BOOK_DIR / f"{source}.tsv"
+    with filepath.open(encoding="utf-8") as f:
+        lines = f.readlines()
+
+    for i in range(1, len(lines)):
+        line = lines[i].strip()
+        if not line:
+            continue
+        parts = line.split("\t")
+        if len(parts) >= 2 and parts[1] == src_ref:
+            if len(parts) >= 4:
+                parts[2] = update.pronunciation
+                parts[3] = update.meaning
+            elif len(parts) == 3:
+                parts.append(update.meaning)
+            elif len(parts) == 2:
+                parts.append(update.pronunciation)
+                parts.append(update.meaning)
+            lines[i] = "\t".join(parts) + "\n"
+            break
+
+    with filepath.open("w", encoding="utf-8") as f:
+        f.writelines(lines)
+
+    loader.clear_cache()
+    return {"status": "ok", "character": found}
+
+
+# ─── 对齐 API ────────────────────────────────────────────────
 
 
 @app.get("/api/alignments")
 def list_alignments():
-    """列出所有已保存的对齐记录。"""
-    alignments = get_alignments()
-    data = get_data()
-
-    enriched = []
-    for i, al in enumerate(alignments):
-        char_a = None
-        char_b = None
-        if al["source_a"] in data:
-            for c in data[al["source_a"]]:
-                if c["src_ref"] == al["src_ref_a"]:
-                    char_a = c
-                    break
-        if al["source_b"] in data:
-            for c in data[al["source_b"]]:
-                if c["src_ref"] == al["src_ref_b"]:
-                    char_b = c
-                    break
-        enriched.append(
-            {
-                "id": i,
-                "source_a": al["source_a"],
-                "src_ref_a": al["src_ref_a"],
-                "char_a": char_a,
-                "source_b": al["source_b"],
-                "src_ref_b": al["src_ref_b"],
-                "char_b": char_b,
-                "note": al.get("note", ""),
-            }
-        )
-    return enriched
+    """列出所有对齐组（按部首-笔画排序）。"""
+    return alignment_mgr.list_alignments()
 
 
 @app.post("/api/alignments")
-def create_alignment(al: AlignmentCreate):
-    """创建一条对齐记录。"""
-    if al.source_a == al.source_b and al.src_ref_a == al.src_ref_b:
-        raise HTTPException(status_code=400, detail="Cannot align a character with itself")
-
-    alignments = get_alignments()
-
-    for existing in alignments:
-        if (
-            existing["source_a"] == al.source_a
-            and existing["src_ref_a"] == al.src_ref_a
-            and existing["source_b"] == al.source_b
-            and existing["src_ref_b"] == al.src_ref_b
-        ):
-            raise HTTPException(status_code=409, detail="Alignment already exists")
-        if (
-            existing["source_a"] == al.source_b
-            and existing["src_ref_a"] == al.src_ref_b
-            and existing["source_b"] == al.source_a
-            and existing["src_ref_b"] == al.src_ref_a
-        ):
-            raise HTTPException(status_code=409, detail="Reverse alignment already exists")
-
-    new_al = {
-        "source_a": al.source_a,
-        "src_ref_a": al.src_ref_a,
-        "source_b": al.source_b,
-        "src_ref_b": al.src_ref_b,
-        "note": al.note,
-    }
-    alignments.append(new_al)
-    save_alignments(alignments)
-    ALIGNMENTS_CACHE.clear()
-    return {"status": "ok", "alignment": new_al}
+def create_alignment_group(al: AlignmentGroupCreate):
+    """创建/扩展一个对齐组（多对多）。"""
+    try:
+        return alignment_mgr.create_or_merge(al)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
-@app.delete("/api/alignments/{alignment_id}")
-def delete_alignment(alignment_id: int):
-    """删除一条对齐记录。"""
-    alignments = get_alignments()
-    if alignment_id < 0 or alignment_id >= len(alignments):
-        raise HTTPException(status_code=404, detail="Alignment not found")
-    removed = alignments.pop(alignment_id)
-    save_alignments(alignments)
-    ALIGNMENTS_CACHE.clear()
-    return {"status": "ok", "removed": removed}
+# ─── 实时编辑当前工作区（必须在 {group_id} 之前注册）───────
+
+
+@app.get("/api/alignments/current-group")
+def get_current_group():
+    """获取当前正在编辑的对齐组。"""
+    return alignment_mgr.get_current_group()
+
+
+@app.post("/api/alignments/current-group")
+def save_current_group(body: AlignmentGroupCreate):
+    """实时保存当前正在编辑的对齐组。"""
+    return alignment_mgr.save_current_group(body)
+
+
+@app.delete("/api/alignments/current-group")
+def clear_current_group():
+    """清空当前工作区。"""
+    return alignment_mgr.clear_current_group()
+
+
+# ─── 静态对齐组 CRUD ──────────────────────────────────────────
+
+
+@app.delete("/api/alignments/{group_id}")
+def delete_alignment_group(group_id: int):
+    """删除整个对齐组。"""
+    try:
+        return alignment_mgr.delete_group(group_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@app.delete("/api/alignments/{group_id}/entries/{entry_index}")
+def remove_entry_from_group(group_id: int, entry_index: int):
+    """从对齐组中移除一个条目。"""
+    try:
+        return alignment_mgr.remove_entry(group_id, entry_index)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 
 # ─── IPA 距离 / 语义相似度 / 部首相似度 API ──────────────────
@@ -429,8 +316,6 @@ def calc_radical_similarity(
 @app.get("/api/radical-order")
 def get_radical_order():
     """获取部首排列顺序列表。"""
-    from radical_similarity import load_radical_order
-
     radicals = load_radical_order()
     return {"total": len(radicals), "radicals": radicals}
 
@@ -449,9 +334,9 @@ def suggest_alignments(
       - pronunciation: 仅发音距离
       - meaning: 仅语义相似度
       - radical: 仅部首笔画相似度
-      - combined: 综合三者 (发音 35% + 语义 30% + 部首 35%)
+      - combined: 综合三者
     """
-    data = get_data()
+    data = loader.get_data()
     if source not in data:
         raise HTTPException(status_code=404, detail=f"Source '{source}' not found")
 
@@ -479,7 +364,6 @@ def suggest_alignments(
     elif method == "radical":
         suggestions = find_similar_by_radical_stroke(target_char["glyph"], source, candidates, top_k=top_k)
     else:
-        # combined: 三路综合
         suggestions = _combined_three_way(target_char, candidates, source, top_k)
 
     return {
@@ -490,25 +374,39 @@ def suggest_alignments(
 
 
 def _combined_three_way(target_char: dict, candidates: list[dict], source: str, top_k: int) -> list[dict]:
-    """
-    三路综合相似度：发音 35% + 语义 30% + 部首 35%
-    """
+    """三路综合相似度：优先释义拉丁拼音，回退 IPA。"""
+    from meaning_similarity import extract_pinyin, pinyin_similarity
+
     results = []
     for cand in candidates:
-        cand_pron = cand.get("pronunciation", "")
         cand_mean = cand.get("meaning", "")
+        t_lat = extract_pinyin(target_char.get("meaning", ""))
+        c_lat = extract_pinyin(cand_mean)
+        ipa_t = target_char.get("pronunciation", "")
+        ipa_c = cand.get("pronunciation", "")
 
-        # 发音相似度
-        dist_info = syllable_distance(target_char["pronunciation"], cand_pron)
-        pron_sim = 1.0 - dist_info["combined_distance"]
+        if t_lat and c_lat:
+            pron_sim = pinyin_similarity(t_lat, c_lat)
+            w_pron, w_mean, w_rs = 0.50, 0.30, 0.20
+            dist_info = {"method": "latin_pinyin", "a": t_lat, "b": c_lat}
+            mean_info = meaning_similarity(target_char["meaning"], cand_mean)
+            mean_sim = mean_info["combined_score"]
+        elif ipa_t and ipa_c:
+            dist_info = syllable_distance(ipa_t, ipa_c)
+            pron_sim = 1.0 - dist_info["combined_distance"]
+            w_pron, w_mean, w_rs = 0.50, 0.30, 0.20
+            mean_info = meaning_similarity(target_char["meaning"], cand_mean)
+            mean_sim = mean_info["combined_score"]
+        else:
+            dist_info = {"method": "none"}
+            pron_sim = 0.0
+            w_pron, w_mean, w_rs = 0.0, 0.60, 0.40
+            shared = _shared_char_count(target_char.get("meaning", ""), cand_mean)
+            mean_sim = min(shared / 10.0, 1.0)
+            mean_info = {"combined_score": mean_sim, "shared_count": shared}
 
-        # 语义相似度
-        mean_info = meaning_similarity(target_char["meaning"], cand_mean)
-        mean_sim = mean_info["combined_score"]
-
-        # 部首笔画相似度
-        target_rs = get_char_rs(source, target_char["glyph"])
-        cand_rs = get_char_rs(cand.get("source", ""), cand.get("glyph", ""))
+        target_rs = loader.get_char_rs(source, target_char["glyph"])
+        cand_rs = loader.get_char_rs(cand.get("source", ""), cand.get("glyph", ""))
         if target_rs and cand_rs:
             rs_info = radical_stroke_similarity(
                 target_rs.get("radical"),
@@ -521,7 +419,7 @@ def _combined_three_way(target_char: dict, candidates: list[dict], source: str, 
             rs_info = {"radical_similarity": 0.0, "stroke_similarity": 0.5, "combined_score": 0.15}
             rs_sim = 0.15
 
-        combined = 0.35 * pron_sim + 0.30 * mean_sim + 0.35 * rs_sim
+        combined = w_pron * pron_sim + w_mean * mean_sim + w_rs * rs_sim
 
         results.append(
             {
@@ -530,6 +428,7 @@ def _combined_three_way(target_char: dict, candidates: list[dict], source: str, 
                 "pron_similarity": round(pron_sim, 4),
                 "mean_similarity": round(mean_sim, 4),
                 "rs_similarity": round(rs_sim, 4),
+                "shared_char_count": mean_info.get("shared_count", 0),
                 "pron_distance_detail": dist_info,
                 "mean_similarity_detail": mean_info,
                 "rs_similarity_detail": rs_info,
@@ -540,15 +439,256 @@ def _combined_three_way(target_char: dict, candidates: list[dict], source: str, 
     return results[:top_k]
 
 
+def _shared_char_count(text1: str, text2: str) -> int:
+    """统计两个释义之间共享的中文字符数（去重后），对连续匹配给予额外加分。"""
+
+    def _strip_grammar(t):
+        return re.sub(r"[（(][^）)]*[自动使动量词][^）)]*[）)]", "", t)
+
+    a = _strip_grammar(text1)
+    b = _strip_grammar(text2)
+    a_chars = re.findall(r"[\u4e00-\u9fff]", a)
+    b_chars = re.findall(r"[\u4e00-\u9fff]", b)
+    chars1 = set(a_chars)
+    chars2 = set(b_chars)
+    shared_unique = len(chars1 & chars2)
+    if shared_unique == 0:
+        return 0
+
+    sa = "".join(a_chars)
+    sb = "".join(b_chars)
+    bonus = 0
+    for length in range(len(sa), 0, -1):
+        for start in range(len(sa) - length + 1):
+            sub = sa[start : start + length]
+            if sub in sb:
+                bonus = length - 1
+                break
+        if bonus:
+            break
+    i = 0
+    while i < len(sa):
+        j = i + 1
+        while j <= len(sa) and sa[i:j] in sb:
+            j += 1
+        run_len = (j - 1) - i
+        if run_len >= 2:
+            bonus = max(bonus, run_len - 1)
+        i += max(run_len, 1)
+    return shared_unique + bonus
+
+
+def _similarity_between_chars(char_a: dict, source_a: str, char_b: dict, source_b: str) -> dict:
+    """计算两个字符之间 3 路综合相似度 (释义拉丁拼音 + 语义 + 部首)。
+
+    优先使用释义中的拉丁拼音（如 shen/sheng）进行模糊匹配，
+    回退到 IPA 注音。
+    """
+    from meaning_similarity import extract_pinyin, pinyin_similarity
+
+    # 提取释义中的拉丁拼音
+    lat_py_a = extract_pinyin(char_a.get("meaning", ""))
+    lat_py_b = extract_pinyin(char_b.get("meaning", ""))
+    # IPA 注音作为后备
+    ipa_a = char_a.get("pronunciation", "")
+    ipa_b = char_b.get("pronunciation", "")
+
+    if lat_py_a and lat_py_b:
+        # 优先：释义拉丁拼音模糊匹配
+        pron_sim = pinyin_similarity(lat_py_a, lat_py_b)
+        w_pron, w_mean, w_rs = 0.50, 0.30, 0.20
+        pron = {"latin_pinyin_a": lat_py_a, "latin_pinyin_b": lat_py_b, "method": "latin_pinyin"}
+        mean = meaning_similarity(char_a["meaning"], char_b["meaning"])
+        mean_sim = mean["combined_score"]
+        shared_count = _shared_char_count(char_a.get("meaning", ""), char_b.get("meaning", ""))
+    elif ipa_a and ipa_b:
+        # 后备：IPA 注音距离
+        pron = syllable_distance(ipa_a, ipa_b)
+        pron_sim = 1.0 - pron["combined_distance"]
+        w_pron, w_mean, w_rs = 0.50, 0.30, 0.20
+        mean = meaning_similarity(char_a["meaning"], char_b["meaning"])
+        mean_sim = mean["combined_score"]
+        shared_count = _shared_char_count(char_a.get("meaning", ""), char_b.get("meaning", ""))
+    else:
+        pron_sim = 0.0
+        w_pron, w_mean, w_rs = 0.0, 0.60, 0.40
+        pron = {"method": "none"}
+        shared_count = _shared_char_count(char_a.get("meaning", ""), char_b.get("meaning", ""))
+        mean_sim = min(shared_count / 10.0, 1.0)
+        mean = {"combined_score": mean_sim, "shared_count": shared_count}
+
+    rs_a = loader.get_char_rs(source_a, char_a["glyph"])
+    rs_b = loader.get_char_rs(source_b, char_b["glyph"])
+    if rs_a and rs_b:
+        rs = radical_stroke_similarity(
+            rs_a.get("radical"),
+            rs_a.get("other_stroke"),
+            rs_b.get("radical"),
+            rs_b.get("other_stroke"),
+        )
+        rs_sim = rs["combined_score"]
+    else:
+        rs = {"radical_similarity": 0.0, "stroke_similarity": 0.5, "combined_score": 0.15}
+        rs_sim = 0.15
+
+    combined = w_pron * pron_sim + w_mean * mean_sim + w_rs * rs_sim
+    return {
+        "combined_score": round(combined, 4),
+        "pron_similarity": round(pron_sim, 4),
+        "mean_similarity": round(mean_sim, 4),
+        "rs_similarity": round(rs_sim, 4),
+        "shared_char_count": shared_count,
+        "pron_detail": pron,
+        "mean_detail": mean,
+        "rs_detail": rs,
+    }
+
+
+def _best_similarity_to_group(candidate_char: dict, candidate_source: str, group_entry_chars: list[dict]) -> dict:
+    """计算一个候选字符与一组条目中最佳匹配的综合相似度。"""
+    best = {"combined_score": 0.0}
+    for ge in group_entry_chars:
+        sim = _similarity_between_chars(candidate_char, candidate_source, ge["char"], ge["source"])
+        if sim["combined_score"] > best["combined_score"]:
+            best = sim
+    return best
+
+
+# ─── 批量建议 API ────────────────────────────────────────────
+
+
+@app.post("/api/suggest-alignments/batch")
+def suggest_alignments_batch(body: SuggestBatchInput):
+    """批量建议：给定一组已选条目，对每个尚未出现的来源分别给出最佳匹配建议。"""
+    data = loader.get_data()
+    if not body.entries:
+        raise HTTPException(status_code=400, detail="Need at least one entry")
+
+    group_chars = []
+    for ref in body.entries:
+        src = loader.source_from_ref(ref)
+        if not src or src not in data:
+            continue
+        for c in data[src]:
+            if c["src_ref"] == ref:
+                group_chars.append({"source": src, "char": c})
+                break
+    if not group_chars:
+        raise HTTPException(status_code=404, detail="No valid entries found")
+
+    used_pairs = {(gc["source"], gc["char"]["src_ref"]) for gc in group_chars}
+    existing_alignments = loader.get_alignments()
+    aligned_pairs = set()
+    for grp in existing_alignments:
+        for ref in grp.get("entries", []):
+            src = loader.source_from_ref(ref)
+            aligned_pairs.add((src, ref))
+
+    suggestions_by_source = {}
+    for src_name in data:
+        candidates = []
+        for c in data[src_name]:
+            if (src_name, c["src_ref"]) in used_pairs:
+                continue
+            if (src_name, c["src_ref"]) in aligned_pairs:
+                continue
+            # 不做硬性预过滤——让评分函数自行决定匹配方式
+            candidates.append({**c, "source": src_name})
+        if not candidates:
+            continue
+        scored = []
+        for cand in candidates:
+            sim = _best_similarity_to_group(cand, src_name, group_chars)
+            if sim["combined_score"] > 0:
+                scored.append({**cand, **sim})
+        scored.sort(key=lambda x: x["combined_score"], reverse=True)
+        if scored:
+            suggestions_by_source[src_name] = scored[:15]
+
+    return {"target_group_size": len(group_chars), "suggestions_by_source": suggestions_by_source}
+
+
+@app.post("/api/suggest-groups/batch")
+def suggest_groups_batch(body: SuggestBatchInput):
+    """给定一组已选条目，找出与之相似的所有现有对齐组（建议合并）。"""
+    groups = loader.get_alignments()
+    data = loader.get_data()
+
+    query_chars = []
+    for ref in body.entries:
+        src = loader.source_from_ref(ref)
+        if not src or src not in data:
+            continue
+        for c in data[src]:
+            if c["src_ref"] == ref:
+                query_chars.append({"source": src, "char": c})
+                break
+    if not query_chars:
+        raise HTTPException(status_code=404, detail="No valid entries found")
+
+    query_keys = {(qc["source"], qc["char"]["src_ref"]) for qc in query_chars}
+
+    results = []
+    for grp in groups:
+        grp_entries = grp.get("entries", [])
+        grp_keys = {(loader.source_from_ref(e), e) for e in grp_entries}
+        if query_keys & grp_keys:
+            continue
+        grp_chars = []
+        for ref in grp_entries:
+            src = loader.source_from_ref(ref)
+            if src in data:
+                for c in data[src]:
+                    if c["src_ref"] == ref:
+                        grp_chars.append({"source": src, "char": c})
+                        break
+        if not grp_chars:
+            continue
+
+        q_to_g_best = g_to_q_best = 0.0
+        for qc in query_chars:
+            sim = _best_similarity_to_group(qc["char"], qc["source"], grp_chars)
+            q_to_g_best = max(q_to_g_best, sim["combined_score"])
+        for gc in grp_chars:
+            sim = _best_similarity_to_group(gc["char"], gc["source"], query_chars)
+            g_to_q_best = max(g_to_q_best, sim["combined_score"])
+
+        best_sim = max(q_to_g_best, g_to_q_best)
+        if best_sim >= 0.2:
+            preview = []
+            for ref in grp_entries[:4]:
+                src = loader.source_from_ref(ref)
+                char_obj = None
+                if src in data:
+                    for c in data[src]:
+                        if c["src_ref"] == ref:
+                            char_obj = c
+                            break
+                preview.append({"source": src, "src_ref": ref, "char": char_obj})
+            results.append(
+                {
+                    "group_id": grp.get("id"),
+                    "similarity": round(best_sim, 4),
+                    "entries_count": len(grp_entries),
+                    "preview": preview,
+                }
+            )
+
+    results.sort(key=lambda x: x["similarity"], reverse=True)
+    return {"suggestions": results[:10]}
+
+
+# ─── 全面比较 API ────────────────────────────────────────────
+
+
 @app.get("/api/compare/{source_a}/{src_ref_a}/{source_b}/{src_ref_b}")
 def compare_two(source_a: str, src_ref_a: str, source_b: str, src_ref_b: str):
     """全面比较两个字符：发音 + 语义 + 部首笔画。"""
-    data = get_data()
+    data = loader.get_data()
     if source_a not in data or source_b not in data:
         raise HTTPException(status_code=404, detail="Source not found")
 
-    char_a = None
-    char_b = None
+    char_a = char_b = None
     for c in data[source_a]:
         if c["src_ref"] == src_ref_a:
             char_a = c
@@ -557,17 +697,13 @@ def compare_two(source_a: str, src_ref_a: str, source_b: str, src_ref_b: str):
         if c["src_ref"] == src_ref_b:
             char_b = c
             break
-
     if char_a is None or char_b is None:
         raise HTTPException(status_code=404, detail="Character not found")
 
-    # 发音距离
     pron_dist = syllable_distance(char_a["pronunciation"], char_b["pronunciation"])
-    # 语义相似度
     mean_sim = meaning_similarity(char_a["meaning"], char_b["meaning"])
-    # 部首笔画相似度
-    rs_a = get_char_rs(source_a, char_a["glyph"])
-    rs_b = get_char_rs(source_b, char_b["glyph"])
+    rs_a = loader.get_char_rs(source_a, char_a["glyph"])
+    rs_b = loader.get_char_rs(source_b, char_b["glyph"])
     if rs_a and rs_b:
         rs_info = radical_stroke_similarity(
             rs_a.get("radical"),
@@ -578,9 +714,8 @@ def compare_two(source_a: str, src_ref_a: str, source_b: str, src_ref_b: str):
     else:
         rs_info = {"radical_similarity": 0.0, "stroke_similarity": 0.5, "combined_score": 0.15}
 
-    # 综合
     pron_sim = 1.0 - pron_dist["combined_distance"]
-    combined = round(0.35 * pron_sim + 0.30 * mean_sim["combined_score"] + 0.35 * rs_info["combined_score"], 4)
+    combined = round(0.25 * pron_sim + 0.50 * mean_sim["combined_score"] + 0.25 * rs_info["combined_score"], 4)
 
     return {
         "char_a": {**char_a, "source": source_a},
@@ -599,35 +734,31 @@ def compare_two(source_a: str, src_ref_a: str, source_b: str, src_ref_b: str):
 def list_mappings():
     """列出所有已有的 YAML 映射文件及其统计。"""
     mappings = []
-    for yaml_file in sorted(MAP_DIR.glob("*.yaml")):
-        data_map = load_yaml(yaml_file.stem)
-        mappings.append(
-            {
-                "file": yaml_file.name,
-                "stem": yaml_file.stem,
-                "pair_count": len(data_map),
-            }
-        )
+    for yaml_file in sorted(loader.MAP_DIR.glob("*.yaml")):
+        data_map = loader.load_yaml(yaml_file.stem)
+        mappings.append({"file": yaml_file.name, "stem": yaml_file.stem, "pair_count": len(data_map)})
     return mappings
 
 
 @app.get("/api/mappings/{name}")
 def get_mapping(name: str):
     """获取指定映射文件的完整内容。"""
-    data_map = load_yaml(name)
+    data_map = loader.load_yaml(name)
     return {"name": name, "mappings": data_map, "count": len(data_map)}
 
 
 @app.post("/api/mappings/{name}")
 def add_mapping(name: str, glyph_a: str = Query(...), glyph_b: str = Query(...)):
     """向 YAML 映射文件中添加一对映射。"""
-    filepath = MAP_DIR / f"{name}.yaml"
+    import yaml
+
+    filepath = loader.MAP_DIR / f"{name}.yaml"
     if not filepath.exists():
-        filepath = RS_DIR / f"{name}.yaml"
+        filepath = loader.RS_DIR / f"{name}.yaml"
     if not filepath.exists():
         raise HTTPException(status_code=404, detail=f"Mapping file '{name}' not found")
 
-    existing = load_yaml(name)
+    existing = loader.load_yaml(name)
     existing[glyph_a] = glyph_b
     with filepath.open("w", encoding="utf-8") as f:
         yaml.dump(existing, f, allow_unicode=True, default_flow_style=False)
@@ -639,9 +770,9 @@ def add_mapping(name: str, glyph_a: str = Query(...), glyph_b: str = Query(...))
 
 @app.get("/api/clusters/{glyph}")
 def get_glyph_cluster(glyph: str):
-    """获取某个字形在所有来源中的出现情况及已有关联。"""
-    data = get_data()
-    alignments = get_alignments()
+    """获取某个字形在所有来源中的出现情况及所在的 alignment groups。"""
+    data = loader.get_data()
+    groups = loader.get_alignments()
 
     occurrences = []
     for src_name, chars in data.items():
@@ -649,21 +780,29 @@ def get_glyph_cluster(glyph: str):
             if char["glyph"] == glyph:
                 occurrences.append({**char, "source": src_name})
 
-    linked = []
-    for al in alignments:
+    linked_groups = []
+    for grp in groups:
         for occ in occurrences:
-            if al["source_a"] == occ["source"] and al["src_ref_a"] == occ["src_ref"]:
-                if al["source_b"] in data:
-                    for c in data[al["source_b"]]:
-                        if c["src_ref"] == al["src_ref_b"]:
-                            linked.append({**c, "source": al["source_b"], "via": al["source_a"]})
-            elif al["source_b"] == occ["source"] and al["src_ref_b"] == occ["src_ref"]:
-                if al["source_a"] in data:
-                    for c in data[al["source_a"]]:
-                        if c["src_ref"] == al["src_ref_a"]:
-                            linked.append({**c, "source": al["source_a"], "via": al["source_b"]})
+            for ref in grp.get("entries", []):
+                src = loader.source_from_ref(ref)
+                if src == occ["source"] and ref == occ["src_ref"]:
+                    others = []
+                    for ore in grp["entries"]:
+                        if ore == ref:
+                            continue
+                        osrc = loader.source_from_ref(ore)
+                        char_info = None
+                        if osrc in data:
+                            for c in data[osrc]:
+                                if c["src_ref"] == ore:
+                                    char_info = c
+                                    break
+                        others.append({"source": osrc, "src_ref": ore, "char": char_info})
+                    if others:
+                        linked_groups.append({"group_id": grp["id"], "via": occ["src_ref"], "peers": others})
+                    break
 
-    return {"glyph": glyph, "occurrences": occurrences, "linked_characters": linked}
+    return {"glyph": glyph, "occurrences": occurrences, "linked_groups": linked_groups}
 
 
 # ─── 统计 API ─────────────────────────────────────────────────
@@ -672,8 +811,8 @@ def get_glyph_cluster(glyph: str):
 @app.get("/api/stats")
 def get_stats():
     """获取总体统计信息。"""
-    data = get_data()
-    alignments = get_alignments()
+    data = loader.get_data()
+    alignments = loader.get_alignments()
     total_chars = sum(len(v) for v in data.values())
     return {
         "total_sources": len(data),
@@ -704,6 +843,16 @@ def serve_index():
 @app.get("/align.html")
 def serve_align():
     return FileResponse(str(WEB_DIR / "align.html"))
+
+
+@app.get("/entry.html")
+def serve_entry():
+    return FileResponse(str(WEB_DIR / "entry.html"))
+
+
+@app.get("/groups.html")
+def serve_groups():
+    return FileResponse(str(WEB_DIR / "groups.html"))
 
 
 # ─── 启动 ──────────────────────────────────────────────────────

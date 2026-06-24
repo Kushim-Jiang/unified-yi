@@ -126,7 +126,6 @@ CONSONANT_FEATURES = {
     "dʐ": {"place": 5, "manner": "affricate", "voicing": 1, "nasal": 0},
     "dʐʰ": {"place": 5, "manner": "affricate", "voicing": 1, "nasal": 0, "aspirated": 1},
     # 常见变体 alias
-    "ɡ": {"place": 7, "manner": "plosive", "voicing": 1, "nasal": 0},
     "g": {"place": 7, "manner": "plosive", "voicing": 1, "nasal": 0},
 }
 
@@ -302,6 +301,9 @@ def consonant_distance(c1: Optional[str], c2: Optional[str]) -> float:
     if c1 is None and c2 is None:
         return 0.0
     if c1 is None or c2 is None:
+        # ʔ（喉塞音）≈ 零声母，距离极小
+        if c1 == "ʔ" or c2 == "ʔ":
+            return 0.1
         return 1.0
 
     f1 = CONSONANT_FEATURES.get(c1)

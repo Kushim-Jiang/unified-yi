@@ -187,6 +187,17 @@ def get_char_rs(source: str, glyph: str) -> Optional[dict]:
     return None
 
 
+def radical_order_index(radical: Optional[str]) -> int:
+    """
+    获取部首在 rs_order.yaml 中的排列序号。
+    不在列表中返回 -1。
+    """
+    if radical is None:
+        return -1
+    idx = _get_radical_index()
+    return idx.get(radical, -1)
+
+
 def find_similar_by_radical_stroke(
     target_glyph: str,
     target_source: str,

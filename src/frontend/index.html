@@ -9,10 +9,12 @@
 <body>
 
 <header class="header">
-    <h1>𖬝 Unified Yi <span class="yi-demo">ꆈꌠ</span></h1>
+    <h1>Unified Yi <span class="yi-demo">ꆈꌠ</span></h1>
     <nav>
         <a href="/" class="active">📚 Browse</a>
         <a href="/align.html">🔗 Align</a>
+        <a href="/groups.html">📋 Groups</a>
+        <a href="/entry.html">✏️ Entry</a>
     </nav>
 </header>
 
@@ -37,8 +39,8 @@
 
         <div class="toolbar">
             <input type="text" id="searchInput" placeholder="Search pronunciation, meaning, or ref...">
-            <button onclick="doSearch()" class="btn-primary">🔍 Search</button>
-            <button onclick="clearSearch()" class="btn">✕ Clear</button>
+            <button onclick="app.doSearch()" class="btn-primary">🔍 Search</button>
+            <button onclick="app.clearSearch()" class="btn">✕ Clear</button>
         </div>
 
         <div class="char-table-wrap">
@@ -63,32 +65,10 @@
     <!-- Character Detail & Suggestions -->
     <section id="charDetail" style="margin-top:24px;"></section>
 
-    <!-- Saved Alignments Summary -->
-    <section style="margin-top:32px;">
-        <h2 style="color:var(--text-secondary);font-size:15px;margin-bottom:8px;">
-            🔗 Saved Alignments (<span id="alignmentCount">0</span>)
-        </h2>
-        <div class="char-table-wrap">
-            <table class="char-table">
-                <thead>
-                    <tr>
-                        <th style="width:60px;">Glyph A</th>
-                        <th>Source A</th>
-                        <th style="width:40px;"></th>
-                        <th style="width:60px;">Glyph B</th>
-                        <th>Source B</th>
-                        <th style="width:50px;"></th>
-                    </tr>
-                </thead>
-                <tbody id="alignTableBody">
-                    <tr><td colspan="6" style="text-align:center;padding:20px;"><span class="spinner"></span></td></tr>
-                </tbody>
-            </table>
-        </div>
-    </section>
-
 </div>
 
+<script src="/js/api.js"></script>
+<script src="/js/ui.js"></script>
 <script src="/js/app.js"></script>
 </body>
 </html>
