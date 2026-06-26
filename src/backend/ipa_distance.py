@@ -114,7 +114,7 @@ CONSONANT_FEATURES = {
     "dʑʰ": {"place": 11, "manner": "affricate", "voicing": 1, "nasal": 0, "aspirated": 1},
     "ɕ": {"place": 11, "manner": "fricative", "voicing": -1, "nasal": 0},
     "ʑ": {"place": 11, "manner": "fricative", "voicing": 1, "nasal": 0},
-    "ȵ": {"place": 11, "manner": "nasal", "voicing": 1, "nasal": 1},
+    "ɲ": {"place": 11, "manner": "nasal", "voicing": 1, "nasal": 1},
     # 齿龈塞擦音 Alveolar affricates
     "ts": {"place": 3, "manner": "affricate", "voicing": -1, "nasal": 0},
     "tsʰ": {"place": 3, "manner": "affricate", "voicing": -1, "nasal": 0, "aspirated": 1},
