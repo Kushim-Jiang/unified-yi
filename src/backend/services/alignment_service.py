@@ -184,6 +184,15 @@ class AlignmentManager:
         """排序键：(min_radical_order, min_stroke, id)。"""
         from radical_similarity import get_char_rs, radical_order_index
 
+        def _first_stroke(stroke_val):
+            if stroke_val is None:
+                return 0
+            if isinstance(stroke_val, int):
+                return stroke_val
+            parts = str(stroke_val).split(",")
+            first = parts[0].strip()
+            return int(first) if first.isdigit() else 0
+
         min_rad = 99999
         min_stroke = 99999
         for e in grp.get("entries", []):
@@ -195,7 +204,7 @@ class AlignmentManager:
                 ridx = radical_order_index(rs.get("radical"))
                 if ridx >= 0:
                     min_rad = min(min_rad, ridx)
-                    min_stroke = min(min_stroke, rs.get("other_stroke", 0) or 0)
+                    min_stroke = min(min_stroke, _first_stroke(rs.get("other_stroke")))
                 else:
                     min_rad = min(min_rad, 99998)
         return (min_rad, min_stroke, grp.get("id", 0))

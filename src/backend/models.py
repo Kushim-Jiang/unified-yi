@@ -23,3 +23,22 @@ class SuggestBatchInput(BaseModel):
     """批量建议的请求。"""
 
     entries: list[str]
+
+
+class OCRRequest(BaseModel):
+    """OCR 识别请求。"""
+
+    image: str
+    api_key: str
+    base_url: str
+    model: str
+    provider: str  # "openai" | "anthropic"
+
+
+class OCRVerifyRequest(BaseModel):
+    """OCR 连接验证请求。"""
+
+    api_key: str
+    base_url: str
+    model: str
+    provider: str

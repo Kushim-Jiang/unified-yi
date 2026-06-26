@@ -9,7 +9,7 @@ IPA 距离计算模块
 """
 
 import re
-from typing import Tuple, Optional
+from typing import Optional, Tuple
 
 # ─── IPA 辅音特征表 ───────────────────────────────────────────
 

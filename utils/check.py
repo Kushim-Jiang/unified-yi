@@ -23,6 +23,7 @@ def check_rs(name: str):
 def main():
     check_rs("u0")
     check_rs("u1")
+    check_rs("u2")
     check_rs("q0")
     check_rs("d0")
 

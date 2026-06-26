@@ -1,57 +1,66 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alignment Groups — Unified Yi</title>
+    <title>Groups — Unified Yi</title>
     <link rel="stylesheet" href="/css/style.css">
 </head>
+
 <body>
 
-<header class="header">
-    <h1>Unified Yi <span class="yi-demo">ꆈꌠ</span></h1>
-    <nav>
-        <a href="/">📚 Browse</a>
-        <a href="/align.html">🔗 Align</a>
-        <a href="/groups.html" class="active">📋 Groups</a>
-        <a href="/entry.html">✏️ Entry</a>
-    </nav>
-</header>
+    <header class="header">
+        <h1>Unified Yi <span class="yi-demo">ꆈꌠ</span></h1>
+        <nav>
+            <a href="/">📚 Browse</a>
+            <a href="/align.html">🔗 Align</a>
+            <a href="/groups.html" class="active">📋 Groups</a>
+            <a href="/radicals.html">🔤 Radicals</a>
+            <a href="/entry.html">✏️ Entry</a>
+        </nav>
+    </header>
 
-<div class="container">
+    <div class="container">
 
-    <h2 style="color:var(--text-secondary);font-size:15px;margin-bottom:12px;">
-        📋 Alignment Groups (<span id="groupsCount">0</span>)
-    </h2>
+        <h2 style="color:var(--text-secondary);font-size:15px;margin-bottom:12px;">
+            📋 Alignment Groups (<span id="groupsCount">0</span>)
+        </h2>
 
-    <div class="groups-toolbar" style="display:flex;gap:8px;align-items:center;margin-bottom:12px;">
-        <input type="text" id="groupsSearch" placeholder="🔍 搜索 ID / ref / source…" style="flex:1;max-width:300px;padding:6px 10px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;background:var(--surface);"
-               oninput="app.filterGroups()">
-        <span id="groupsPageInfo" style="font-size:12px;color:var(--text-secondary);white-space:nowrap;"></span>
-        <button id="groupsPrevBtn" class="btn btn-sm" onclick="app.pageGroups(-1)" disabled>←</button>
-        <button id="groupsNextBtn" class="btn btn-sm" onclick="app.pageGroups(1)" disabled>→</button>
-        <button class="btn btn-sm btn-danger" onclick="app.deleteSelectedGroups()" id="btnDeleteSelected" disabled style="margin-left:auto;">🗑️ 删除选中</button>
+        <div class="groups-toolbar" style="display:flex;gap:8px;align-items:center;margin-bottom:12px;">
+            <input type="text" id="groupsSearch" placeholder="🔍 搜索 ID / ref / source…"
+                style="flex:1;max-width:300px;padding:6px 10px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;background:var(--surface);"
+                oninput="app.filterGroups()">
+            <span id="groupsPageInfo" style="font-size:12px;color:var(--text-secondary);white-space:nowrap;"></span>
+            <button id="groupsPrevBtn" class="btn btn-sm" onclick="app.pageGroups(-1)" disabled>←</button>
+            <button id="groupsNextBtn" class="btn btn-sm" onclick="app.pageGroups(1)" disabled>→</button>
+            <button class="btn btn-sm btn-danger" onclick="app.deleteSelectedGroups()" id="btnDeleteSelected" disabled
+                style="margin-left:auto;">🗑️ 删除选中</button>
+        </div>
+
+        <div class="char-table-wrap" style="overflow-x:auto;">
+            <table class="char-table groups-table" id="groupsTable">
+                <thead id="groupsHead">
+                    <tr>
+                        <th style="width:30px;"><input type="checkbox" id="selectAll" onchange="app.toggleSelectAll()">
+                        </th>
+                        <th style="width:50px;">ID</th>
+                        <!-- source columns inserted by JS -->
+                    </tr>
+                </thead>
+                <tbody id="groupsBody">
+                    <tr>
+                        <td colspan="3" style="text-align:center;padding:20px;"><span class="spinner"></span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
     </div>
 
-    <div class="char-table-wrap" style="overflow-x:auto;">
-        <table class="char-table groups-table" id="groupsTable">
-            <thead id="groupsHead">
-                <tr>
-                    <th style="width:30px;"><input type="checkbox" id="selectAll" onchange="app.toggleSelectAll()"></th>
-                    <th style="width:50px;">ID</th>
-                    <!-- source columns inserted by JS -->
-                </tr>
-            </thead>
-            <tbody id="groupsBody">
-                <tr><td colspan="3" style="text-align:center;padding:20px;"><span class="spinner"></span></td></tr>
-            </tbody>
-        </table>
-    </div>
-
-</div>
-
-<script src="/js/api.js"></script>
-<script src="/js/ui.js"></script>
-<script src="/js/groups.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/ui.js"></script>
+    <script src="/js/groups.js"></script>
 </body>
+
 </html>

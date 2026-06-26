@@ -1,88 +1,112 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Align Characters — Unified Yi</title>
+    <title>Align — Unified Yi</title>
     <link rel="stylesheet" href="/css/style.css">
 </head>
+
 <body>
 
-<header class="header">
-    <h1>Unified Yi <span class="yi-demo">ꆈꌠ</span></h1>
-    <nav>
-        <a href="/">📚 Browse</a>
-        <a href="/align.html" class="active">🔗 Align</a>
-        <a href="/groups.html">📋 Groups</a>
-        <a href="/entry.html">✏️ Entry</a>
-    </nav>
-</header>
+    <header class="header">
+        <h1>Unified Yi <span class="yi-demo">ꆈꌠ</span></h1>
+        <nav>
+            <a href="/">📚 Browse</a>
+            <a href="/align.html" class="active">🔗 Align</a>
+            <a href="/groups.html">📋 Groups</a>
+            <a href="/radicals.html">🔤 Radicals</a>
+            <a href="/entry.html">✏️ Entry</a>
+        </nav>
+    </header>
 
-<div class="container">
+    <div class="container">
 
-    <!-- ═══ Progress Bar ═══ -->
-    <div id="progressOverlay" style="display:none;position:fixed;top:0;left:0;right:0;height:3px;z-index:9999;">
-        <div id="progressBar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--accent),#6c5ce7);border-radius:0 2px 2px 0;transition:width .3s ease;"></div>
-    </div>
-    <div id="progressMessage" style="display:none;position:fixed;top:8px;right:16px;z-index:9999;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:6px 14px;font-size:13px;box-shadow:var(--shadow);color:var(--text);">
-        <span id="progressText">⏳ Loading…</span>
-    </div>
+        <!-- ═══ Progress Bar ═══ -->
+        <div id="progressOverlay" style="display:none;position:fixed;top:0;left:0;right:0;height:3px;z-index:9999;">
+            <div id="progressBar"
+                style="height:100%;width:0%;background:linear-gradient(90deg,var(--accent),#6c5ce7);border-radius:0 2px 2px 0;transition:width .3s ease;">
+            </div>
+        </div>
+        <div id="progressMessage"
+            style="display:none;position:fixed;top:8px;right:16px;z-index:9999;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:6px 14px;font-size:13px;box-shadow:var(--shadow);color:var(--text);">
+            <span id="progressText">⏳ Loading…</span>
+        </div>
 
-    <!-- ═══ Character Picker (top) ═══ -->
-    <div style="display:flex;gap:16px;margin-bottom:16px;align-items:stretch;">
+        <!-- ═══ Character Picker (top) ═══ -->
+        <div style="display:flex;gap:16px;margin-bottom:16px;align-items:stretch;">
 
-        <!-- Source selector + search -->
-        <div style="flex:0 0 440px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px;box-shadow:var(--shadow);">
-            <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
-                <select id="pickSource" style="flex:1;padding:6px 8px;border:1px solid var(--border);border-radius:4px;"
+            <!-- Source selector + search -->
+            <div
+                style="flex:0 0 440px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px;box-shadow:var(--shadow);">
+                <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+                    <select id="pickSource"
+                        style="flex:1;padding:6px 8px;border:1px solid var(--border);border-radius:4px;"
                         onchange="app.switchPickSource()"></select>
-                <button class="btn btn-sm" onclick="app.clearCurrentGroup()" title="Clear current group">✕ Clear</button>
+                    <button class="btn btn-sm" onclick="app.clearCurrentGroup()" title="Clear current group">✕
+                        Clear</button>
+                </div>
+                <input type="text" id="pickSearch" placeholder="Search..."
+                    style="width:100%;padding:5px 8px;border:1px solid var(--border);border-radius:4px;margin-bottom:6px;"
+                    onkeydown="if(event.key==='Enter')app.doPickSearch()">
+                <div style="font-size:11px;color:var(--text-secondary);margin-bottom:4px;"><span id="pickTotal">0</span>
+                    chars · <span id="pickSourceLabel">—</span></div>
+                <div style="max-height:260px;overflow-y:auto;">
+                    <table class="char-table" style="font-size:12px;">
+                        <thead>
+                            <tr>
+                                <th style="width:30px;">字</th>
+                                <th style="width:55px;">Ref</th>
+                                <th style="width:50px;">读音</th>
+                                <th>含义</th>
+                                <th style="width:26px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="pickCharList"></tbody>
+                    </table>
+                </div>
+                <div class="pagination" id="pickPagination" style="margin-top:4px;"></div>
             </div>
-            <input type="text" id="pickSearch" placeholder="Search..." style="width:100%;padding:5px 8px;border:1px solid var(--border);border-radius:4px;margin-bottom:6px;"
-                   onkeydown="if(event.key==='Enter')app.doPickSearch()">
-            <div style="font-size:11px;color:var(--text-secondary);margin-bottom:4px;"><span id="pickTotal">0</span> chars · <span id="pickSourceLabel">—</span></div>
-            <div style="max-height:260px;overflow-y:auto;">
-                <table class="char-table" style="font-size:12px;">
-                    <thead><tr><th style="width:30px;">字</th><th style="width:55px;">Ref</th><th style="width:50px;">读音</th><th>含义</th><th style="width:26px;"></th></tr></thead>
-                    <tbody id="pickCharList"></tbody>
-                </table>
+
+            <!-- Current Group (middle) -->
+            <div
+                style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px;box-shadow:var(--shadow);">
+                <h3
+                    style="font-size:14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;">
+                    <span>🧩 Current Alignment Group</span>
+                    <span id="currentGroupCount" style="font-size:12px;color:var(--text-secondary);">0 entries</span>
+                </h3>
+                <div id="currentGroupDisplay" style="min-height:80px;">
+                    <p style="color:var(--text-secondary);font-size:13px;padding:20px 0;text-align:center;">
+                        Pick a character from the left panel to start a group
+                    </p>
+                </div>
+                <div style="margin-top:8px;display:flex;gap:8px;justify-content:flex-end;">
+                    <button id="btnSaveGroup" class="btn btn-primary" onclick="app.saveCurrentGroup()" disabled>💾 Save
+                        Group</button>
+                </div>
             </div>
-            <div class="pagination" id="pickPagination" style="margin-top:4px;"></div>
+
         </div>
 
-        <!-- Current Group (middle) -->
-        <div style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px;box-shadow:var(--shadow);">
-            <h3 style="font-size:14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;">
-                <span>🧩 Current Alignment Group</span>
-                <span id="currentGroupCount" style="font-size:12px;color:var(--text-secondary);">0 entries</span>
-            </h3>
-            <div id="currentGroupDisplay" style="min-height:80px;">
-                <p style="color:var(--text-secondary);font-size:13px;padding:20px 0;text-align:center;">
-                    Pick a character from the left panel to start a group
-                </p>
+        <!-- ═══ Batch Suggestions (middle) ═══ -->
+        <div id="batchSuggestions"
+            style="display:none;margin-bottom:16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px;box-shadow:var(--shadow);">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+                <h3 style="font-size:14px;margin:0;">🤖 Auto-Suggestions</h3>
+                <div id="sourceToggles" style="display:flex;flex-wrap:wrap;gap:6px;font-size:11px;"></div>
             </div>
-            <div style="margin-top:8px;display:flex;gap:8px;justify-content:flex-end;">
-                <button id="btnSaveGroup" class="btn btn-primary" onclick="app.saveCurrentGroup()" disabled>💾 Save Group</button>
+            <div id="batchSuggestionsBody" style="display:flex;flex-wrap:wrap;gap:8px;">
+                <!-- per-source suggestion cards rendered here -->
             </div>
         </div>
 
     </div>
 
-    <!-- ═══ Batch Suggestions (middle) ═══ -->
-    <div id="batchSuggestions" style="display:none;margin-bottom:16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px;box-shadow:var(--shadow);">
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
-            <h3 style="font-size:14px;margin:0;">🤖 Auto-Suggestions</h3>
-            <div id="sourceToggles" style="display:flex;flex-wrap:wrap;gap:6px;font-size:11px;"></div>
-        </div>
-        <div id="batchSuggestionsBody" style="display:flex;flex-wrap:wrap;gap:8px;">
-            <!-- per-source suggestion cards rendered here -->
-        </div>
-    </div>
-
-</div>
-
-<script src="/js/api.js"></script>
-<script src="/js/ui.js"></script>
-<script src="/js/align.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/ui.js"></script>
+    <script src="/js/align.js"></script>
 </body>
+
 </html>

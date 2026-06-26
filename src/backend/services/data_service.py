@@ -33,6 +33,7 @@ class DataLoader:
         "d4": {"name": "彝汉简明词典 (1984)", "region": "云南", "year": 1984, "group": "yunnan"},
         "d5": {"name": "彝汉字典 楚雄本 (1995)", "region": "云南", "year": 1995, "group": "yunnan"},
         "d6": {"name": "古彝文常用字典 (2014)", "region": "云南", "year": 2014, "group": "yunnan"},
+        "u2": {"name": "通用彝文规范方案试行通知 (2011)", "region": "通用", "year": 2011, "group": "unified"},
     }
 
     # ── 缓存 ──────────────────────────────────────────────────
@@ -118,7 +119,8 @@ class DataLoader:
             return yaml.safe_load(f) or {}
 
     def load_rs_data(self, source: str) -> dict[str, dict]:
-        """加载指定来源的部首-笔画数据。"""
+        """加载指定来源的部首-笔画数据。
+        笔画字段支持逗号分隔（多个部首用逗号隔开）。"""
         filepath = self.RS_DIR / f"{source}.tsv"
         if not filepath.exists():
             return {}
@@ -133,7 +135,7 @@ class DataLoader:
             if len(parts) >= 3:
                 data[parts[0]] = {
                     "radical": parts[1],
-                    "other_stroke": int(parts[2]) if parts[2].strip().isdigit() else 0,
+                    "other_stroke": parts[2],  # may be comma-separated
                 }
         return data
 

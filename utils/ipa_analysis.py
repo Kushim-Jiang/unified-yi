@@ -8,8 +8,8 @@ Scans all pronunciation fields and reports:
 """
 
 import re
-from pathlib import Path
 from collections import Counter
+from pathlib import Path
 
 BOOK_DIR = Path(__file__).parent.parent / "book"
 IPA_CHAR_CACHE = Counter()

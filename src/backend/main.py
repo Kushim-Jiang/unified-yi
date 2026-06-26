@@ -6,6 +6,7 @@
 - 字符查询与搜索
 - 字形对齐（手动关联 + 自动建议）
 - IPA 距离 & 语义相似度 & 部首笔画相似度
+- 多模型 OCR（OpenAI 兼容 / Anthropic）
 """
 
 import re
@@ -15,16 +16,12 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-
-from models import CharacterUpdate, AlignmentGroupCreate, SuggestBatchInput
-from services import DataLoader, AlignmentManager
-from ipa_distance import syllable_distance, find_similar_by_pronunciation
-from meaning_similarity import meaning_similarity, find_similar_by_meaning
-from radical_similarity import (
-    radical_stroke_similarity,
-    find_similar_by_radical_stroke,
-    load_radical_order,
-)
+from ipa_distance import find_similar_by_pronunciation, syllable_distance
+from meaning_similarity import find_similar_by_meaning, meaning_similarity
+from models import AlignmentGroupCreate, CharacterUpdate, SuggestBatchInput
+from ocr import router as ocr_router
+from radical_similarity import find_similar_by_radical_stroke, load_radical_order, radical_stroke_similarity
+from services import AlignmentManager, DataLoader
 
 # ─── 路径配置 ──────────────────────────────────────────────────
 BASE_DIR = Path(__file__).parent.parent.parent
@@ -37,6 +34,7 @@ alignment_mgr = AlignmentManager(loader)
 
 # ─── 应用初始化 ────────────────────────────────────────────────
 app = FastAPI(title="Unified Yi Character Manager", version="1.2.0")
+app.include_router(ocr_router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -320,6 +318,107 @@ def get_radical_order():
     return {"total": len(radicals), "radicals": radicals}
 
 
+# ─── 部首数据 API（读写 rs/ TSV）───────────────────────────
+
+
+@app.get("/api/radical-data/{source}")
+def list_radical_data(source: str):
+    """获取指定来源的部首笔画数据。"""
+    try:
+        # Get book data to know all characters
+        data = loader.get_data()
+        if source not in data:
+            raise HTTPException(status_code=404, detail=f"Source '{source}' not found")
+
+        # Load RS data
+        rs_data = loader.load_rs_data(source)
+        radical_index = loader.get_radical_index()
+
+        # Build character list with RS info
+        result = []
+        for char in data[source]:
+            glyph = char["glyph"]
+            rs = rs_data.get(glyph)
+            if rs:
+                rad_str = rs["radical"]
+                stroke_str = rs["other_stroke"]
+                radicals = [r.strip() for r in rad_str.split(",") if r.strip()]
+                strokes = []
+                for s in stroke_str.split(","):
+                    s = s.strip()
+                    strokes.append(int(s) if s.isdigit() else 0)
+            else:
+                radicals = []
+                strokes = []
+
+            result.append(
+                {
+                    "glyph": glyph,
+                    "src_ref": char["src_ref"],
+                    "radical": ",".join(radicals),
+                    "other_stroke": ",".join(str(s) for s in strokes),
+                    "radicals": radicals,
+                    "strokes": strokes,
+                    "has_rs": rs is not None,
+                }
+            )
+
+        return {
+            "source": source,
+            "total": len(result),
+            "radicals": list(radical_index.keys()),
+            "data": result,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.put("/api/radical-data/{source}/{glyph}")
+def update_radical_data(source: str, glyph: str, radical: str = Query(...), other_stroke: str = Query("0")):
+    """更新某个字符的部首和笔画数。
+    radical 支持逗号分隔（多个部首），other_stroke 也支持逗号分隔。
+    如果 rs/{source}.tsv 不存在则自动创建。"""
+    filepath = loader.RS_DIR / f"{source}.tsv"
+    # Auto-create RS file if missing
+    if not filepath.exists():
+        filepath.parent.mkdir(parents=True, exist_ok=True)
+        with filepath.open("w", encoding="utf-8") as f:
+            f.write("glyph_unified\tradical\tother_stroke\n")
+        lines = ["glyph_unified\tradical\tother_stroke\n"]
+    else:
+        with filepath.open(encoding="utf-8") as f:
+            lines = f.readlines()
+
+    header = lines[0].strip() if lines else ""
+    if not header:
+        lines = ["glyph_unified\tradical\tother_stroke\n"]
+
+    # Find and update existing entry
+    found = False
+    for i in range(1, len(lines)):
+        line = lines[i].strip()
+        if not line:
+            continue
+        parts = line.split("\t")
+        if parts[0] == glyph:
+            parts[1] = radical
+            parts[2] = other_stroke
+            lines[i] = "\t".join(parts) + "\n"
+            found = True
+            break
+
+    if not found:
+        lines.append(f"{glyph}\t{radical}\t{other_stroke}\n")
+
+    with filepath.open("w", encoding="utf-8") as f:
+        f.writelines(lines)
+
+    loader.clear_cache()
+    return {"status": "ok", "glyph": glyph, "radical": radical, "other_stroke": other_stroke}
+
+
 @app.get("/api/suggest-alignments/{source}/{src_ref}")
 def suggest_alignments(
     source: str,
@@ -352,7 +451,9 @@ def suggest_alignments(
     search_sources = [target_source] if target_source and target_source in data else [s for s in data if s != source]
     for s in search_sources:
         for c in data[s]:
-            candidates.append({**c, "source": s})
+            # align 匹配相似度时，只匹配有 meaning 的候选
+            if (c.get("meaning") or "").strip():
+                candidates.append({**c, "source": s})
 
     if not candidates:
         return {"target": {**target_char, "source": source}, "suggestions": []}
@@ -592,7 +693,9 @@ def suggest_alignments_batch(body: SuggestBatchInput):
                 continue
             if (src_name, c["src_ref"]) in aligned_pairs:
                 continue
-            # 不做硬性预过滤——让评分函数自行决定匹配方式
+            # align 匹配相似度时，只匹配有 meaning 的候选
+            if not (c.get("meaning") or "").strip():
+                continue
             candidates.append({**c, "source": src_name})
         if not candidates:
             continue
@@ -855,7 +958,13 @@ def serve_groups():
     return FileResponse(str(WEB_DIR / "groups.html"))
 
 
+@app.get("/radicals.html")
+def serve_radicals():
+    return FileResponse(str(WEB_DIR / "radicals.html"))
+
+
 # ─── 启动 ──────────────────────────────────────────────────────
+
 
 if __name__ == "__main__":
     import uvicorn

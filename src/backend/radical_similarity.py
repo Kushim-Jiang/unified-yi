@@ -27,6 +27,7 @@ def load_rs_data(source: str) -> dict[str, dict]:
     """
     加载指定来源的部首-笔画数据。
     返回 {glyph: {radical, other_stroke}} 的字典。
+    radical 和 other_stroke 字段支持逗号分隔（多个部首）。
     """
     rs_dir = _get_rs_dir()
     filepath = rs_dir / f"{source}.tsv"
@@ -43,7 +44,7 @@ def load_rs_data(source: str) -> dict[str, dict]:
         if len(parts) >= 3:
             data[parts[0]] = {
                 "radical": parts[1],
-                "other_stroke": int(parts[2]) if parts[2].isdigit() else 0,
+                "other_stroke": parts[2],  # may be comma-separated
             }
     return data
 
@@ -145,20 +146,38 @@ def stroke_similarity(stroke1: Optional[int], stroke2: Optional[int]) -> float:
     return round(sim, 4)
 
 
+def _first_stroke(stroke_val: str | int | None) -> int | None:
+    """从可能逗号分隔的笔画字段中提取第一个笔画数。"""
+    if stroke_val is None:
+        return None
+    if isinstance(stroke_val, int):
+        return stroke_val
+    parts = str(stroke_val).split(",")
+    first = parts[0].strip()
+    return int(first) if first.isdigit() else None
+
+
 def radical_stroke_similarity(
     rad1: Optional[str] = None,
-    stroke1: Optional[int] = None,
+    stroke1: str | int | None = None,
     rad2: Optional[str] = None,
-    stroke2: Optional[int] = None,
+    stroke2: str | int | None = None,
 ) -> dict:
     """
     综合部首和笔画的相似度。
+    radical 和 stroke 字段支持逗号分隔（多个部首），此时取第一个用于比较。
 
     权重：部首 70%，笔画 30%
     （部首承载了主要的字形结构信息）
     """
-    r_sim = radical_similarity(rad1, rad2)
-    s_sim = stroke_similarity(stroke1, stroke2)
+    # 取第一个 radical（逗号分隔时）
+    r1 = rad1.split(",")[0].strip() if rad1 and "," in rad1 else rad1
+    r2 = rad2.split(",")[0].strip() if rad2 and "," in rad2 else rad2
+    s1 = _first_stroke(stroke1)
+    s2 = _first_stroke(stroke2)
+
+    r_sim = radical_similarity(r1, r2)
+    s_sim = stroke_similarity(s1, s2)
 
     combined = 0.70 * r_sim + 0.30 * s_sim
 

@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>部首标注 — Unified Yi</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .rs-layout {
+            display: grid;
+            grid-template-columns: 1fr 280px;
+            gap: 16px;
+            align-items: start;
+        }
+
+        .rs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 8px;
+        }
+
+        .rs-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 10px 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.15s;
+            box-shadow: var(--shadow);
+            position: relative;
+        }
+
+        .rs-card:hover {
+            border-color: var(--accent-light);
+            transform: translateY(-1px);
+        }
+
+        .rs-card.selected {
+            border-color: var(--accent);
+            background: var(--accent-bg);
+            box-shadow: 0 0 0 2px var(--accent-light);
+        }
+
+        .rs-card .glyph {
+            font-family: 'YiFont';
+            font-size: 28px;
+            line-height: 1.2;
+            display: block;
+        }
+
+        .rs-card .ref {
+            font-size: 10px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        .rs-card .radical-badge {
+            display: inline-block;
+            font-family: 'YiFont';
+            font-size: 16px;
+            background: var(--accent-bg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 1px 6px;
+            margin-top: 4px;
+        }
+
+        .rs-card .stroke-num {
+            font-size: 11px;
+            color: var(--text-secondary);
+            display: block;
+            margin-top: 2px;
+        }
+
+        .rs-card .unassigned-tag {
+            font-size: 10px;
+            color: var(--danger);
+            display: block;
+            margin-top: 4px;
+        }
+
+        .rs-card .assigned-tag {
+            font-size: 10px;
+            color: var(--success);
+        }
+
+        .rs-card.selected .glyph {
+            color: var(--accent);
+        }
+
+        /* ── Radical palette ── */
+        .rs-palette-panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 80px;
+            max-height: calc(100vh - 100px);
+            overflow-y: auto;
+        }
+
+        .rs-palette-panel h3 {
+            font-size: 13px;
+            padding: 12px 14px 8px;
+            color: var(--accent);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .rs-palette-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
+            gap: 4px;
+            padding: 10px 12px;
+        }
+
+        .rs-palette-item {
+            font-family: 'YiFont';
+            font-size: 20px;
+            text-align: center;
+            padding: 6px 2px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.1s;
+            line-height: 1.2;
+            background: var(--bg);
+        }
+
+        .rs-palette-item:hover {
+            background: var(--accent-bg);
+            border-color: var(--accent-light);
+        }
+
+        .rs-palette-item.active {
+            background: var(--accent);
+            color: #fff;
+            border-color: var(--accent);
+        }
+
+        /* ── Detail panel ── */
+        .rs-detail {
+            margin: 12px 14px;
+            padding: 10px;
+            background: var(--accent-bg);
+            border-radius: var(--radius);
+            text-align: center;
+        }
+
+        .rs-detail .sel-glyph {
+            font-family: 'YiFont';
+            font-size: 36px;
+            display: block;
+        }
+
+        .rs-detail .sel-ref {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .rs-detail input[type="number"] {
+            width: 60px;
+            padding: 4px 6px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .rs-detail .btn-assign {
+            display: block;
+            width: 100%;
+            margin-top: 8px;
+        }
+
+        /* ── Toolbar ── */
+        .rs-toolbar {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 14px;
+            padding: 10px 14px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+        }
+
+        .rs-toolbar .stats {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-left: auto;
+        }
+
+        .rs-toolbar .stats strong {
+            color: var(--text);
+        }
+
+        .rs-toolbar .stats .assigned {
+            color: var(--success);
+        }
+
+        .rs-toolbar .stats .unassigned {
+            color: var(--danger);
+        }
+
+        @media (max-width: 768px) {
+            .rs-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .rs-palette-panel {
+                position: static;
+                max-height: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header class="header">
+        <h1>Unified Yi <span class="yi-demo">ꆈꌠ</span></h1>
+        <nav>
+            <a href="/">📚 Browse</a>
+            <a href="/align.html">🔗 Align</a>
+            <a href="/groups.html">📋 Groups</a>
+            <a href="/radicals.html" class="active">🔤 Radicals</a>
+            <a href="/entry.html">✏️ Entry</a>
+        </nav>
+    </header>
+
+    <div class="container">
+
+        <div class="rs-toolbar">
+            <label style="font-size:13px;font-weight:600;color:var(--text-secondary);">来源：</label>
+            <select id="sourceSelect"
+                style="padding:6px 10px;border:1px solid var(--border);border-radius:var(--radius);font-size:14px;background:var(--bg);">
+                <option value="">— 选择来源 —</option>
+            </select>
+
+            <label style="font-size:13px;font-weight:600;color:var(--text-secondary);">过滤：</label>
+            <select id="filterSelect"
+                style="padding:6px 10px;border:1px solid var(--border);border-radius:var(--radius);font-size:14px;background:var(--bg);">
+                <option value="all">全部</option>
+                <option value="unassigned">未标注</option>
+                <option value="assigned">已标注</option>
+            </select>
+
+            <input type="text" id="searchInput" placeholder="搜索字形或 Ref…"
+                style="padding:6px 10px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;background:var(--bg);width:140px;">
+
+            <span class="stats" id="statsInfo">加载中…</span>
+        </div>
+
+        <div class="rs-layout">
+            <!-- Character grid -->
+            <div id="charGrid" class="rs-grid">
+                <div class="loading" style="grid-column:1/-1;"><span class="spinner"></span> 请选择来源</div>
+            </div>
+
+            <!-- Radical palette -->
+            <div class="rs-palette-panel" id="palettePanel">
+                <h3>🔤 部首列表</h3>
+                <div class="rs-detail" id="detailPanel">
+                    <span class="sel-glyph" id="selGlyph">?</span>
+                    <span class="sel-ref" id="selRef">—</span>
+                    <div style="margin-top:6px;font-size:11px;color:var(--text-secondary);">点击部首面板添加/移除</div>
+                    <div id="assignedRadicals" style="margin-top:6px;text-align:left;">
+                        <div style="color:var(--text-secondary);font-size:12px;padding:8px;">选择字形后在此编辑</div>
+                    </div>
+                    <button class="btn btn-sm btn-assign" style="margin-top:6px;" id="btnClear" disabled
+                        onclick="rsApp.clearRadical()">✕ 清除全部</button>
+                </div>
+                <div class="rs-palette-grid" id="paletteGrid">
+                    <div class="loading" style="grid-column:1/-1;padding:20px;"><span class="spinner"></span></div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/ui.js"></script>
+    <script src="/js/radicals.js"></script>
+</body>
+
+</html>

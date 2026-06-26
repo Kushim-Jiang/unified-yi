@@ -1,8 +1,8 @@
 """Analyze IPA characters used in all book TSV files and generate ASCII replacement mappings."""
 
 import re
-from pathlib import Path
 from collections import Counter
+from pathlib import Path
 
 BOOK_DIR = Path(__file__).parent.parent / "book"
 IPA_PATTERN = re.compile(

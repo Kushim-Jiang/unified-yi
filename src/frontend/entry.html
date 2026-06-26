@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,7 +8,9 @@
     <link rel="stylesheet" href="/css/style.css">
     <style>
         /* ── Grid layout override ── */
-        .entry-layout { margin-bottom: 16px; }
+        .entry-layout {
+            margin-bottom: 16px;
+        }
 
         .rules-list {
             font-size: 12px;
@@ -18,6 +21,7 @@
             margin-bottom: 12px;
             line-height: 1.8;
         }
+
         .rules-list code {
             background: var(--surface);
             padding: 1px 6px;
@@ -34,6 +38,7 @@
             color: var(--text-secondary);
             margin-bottom: 12px;
         }
+
         .switch-wrap input[type="checkbox"] {
             width: 18px;
             height: 18px;
@@ -49,11 +54,13 @@
             overflow-x: auto;
             box-shadow: var(--shadow);
         }
+
         .entry-table {
             width: 100%;
             border-collapse: collapse;
             table-layout: fixed;
         }
+
         .entry-table thead th {
             background: var(--accent-bg);
             padding: 10px 8px;
@@ -66,9 +73,19 @@
             position: sticky;
             top: 0;
         }
-        .entry-table thead th:first-child { width: 50px; }
-        .entry-table thead th:nth-child(2) { width: 70px; }
-        .entry-table thead th:nth-child(3) { width: 130px; }
+
+        .entry-table thead th:first-child {
+            width: 50px;
+        }
+
+        .entry-table thead th:nth-child(2) {
+            width: 70px;
+        }
+
+        .entry-table thead th:nth-child(3) {
+            width: 130px;
+        }
+
         /* col 4 (meaning) gets remaining width */
 
         .entry-table tbody td {
@@ -79,14 +96,17 @@
             font-size: 14px;
             transition: background 0.15s;
         }
+
         .entry-table tbody tr:hover td {
             background: #fdf9f2;
         }
+
         .entry-table .col-idx {
             font-size: 12px;
             color: var(--text-secondary);
             user-select: none;
         }
+
         .entry-table .col-glyph {
             font-family: 'YiFont';
             font-size: 26px;
@@ -94,6 +114,7 @@
             line-height: 1.2;
             padding: 4px 4px;
         }
+
         .entry-table .col-ref {
             font-size: 11px;
             color: var(--text-secondary);
@@ -113,17 +134,21 @@
             word-break: break-word;
             transition: background 0.15s, box-shadow 0.15s;
         }
+
         .entry-table .cell-editable:hover {
             background: #fff9e6;
             box-shadow: inset 0 0 0 1px var(--accent-light);
         }
+
         .entry-table .cell-editable:focus-within {
             background: #fff;
             box-shadow: inset 0 0 0 2px var(--accent);
         }
+
         .entry-table .cell-editable.editing {
             padding: 0;
         }
+
         .entry-table .cell-editable .edit-input,
         .entry-table .cell-editable .edit-textarea {
             width: 100%;
@@ -138,9 +163,11 @@
             box-sizing: border-box;
             line-height: 1.5;
         }
+
         .entry-table .cell-editable .edit-textarea {
             min-height: 28px;
         }
+
         .entry-table .cell-editable .cell-save-indicator {
             font-size: 10px;
             color: var(--success);
@@ -148,14 +175,27 @@
             margin-left: 4px;
             animation: fadeInOut 1.5s ease;
         }
+
         .entry-table .cell-editable .cell-save-error {
             color: var(--danger);
         }
+
         @keyframes fadeInOut {
-            0% { opacity: 0; }
-            20% { opacity: 1; }
-            80% { opacity: 1; }
-            100% { opacity: 0; }
+            0% {
+                opacity: 0;
+            }
+
+            20% {
+                opacity: 1;
+            }
+
+            80% {
+                opacity: 1;
+            }
+
+            100% {
+                opacity: 0;
+            }
         }
 
         /* ── Pagination ── */
@@ -167,6 +207,7 @@
             margin-top: 14px;
             flex-wrap: wrap;
         }
+
         .entry-pagination button {
             padding: 5px 12px;
             border: 1px solid var(--border);
@@ -177,23 +218,50 @@
             color: var(--text);
             transition: all 0.15s;
         }
+
         .entry-pagination button:hover:not(:disabled) {
             background: var(--accent-bg);
             border-color: var(--accent-light);
         }
+
         .entry-pagination button:disabled {
             opacity: 0.4;
             cursor: not-allowed;
         }
+
         .entry-pagination button.active {
             background: var(--accent);
             color: #fff;
             border-color: var(--accent);
         }
+
         .entry-pagination .page-info {
             font-size: 12px;
             color: var(--text-secondary);
             margin: 0 4px;
+        }
+
+        .entry-pagination input[type="number"] {
+            width: 52px;
+            padding: 4px 6px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            font-size: 13px;
+            background: var(--bg);
+            color: var(--text);
+            text-align: center;
+            -moz-appearance: textfield;
+        }
+
+        .entry-pagination input[type="number"]::-webkit-inner-spin-button,
+        .entry-pagination input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .entry-pagination input[type="number"]:focus {
+            outline: none;
+            border-color: var(--accent);
         }
 
         /* ── Stats bar ── */
@@ -209,15 +277,19 @@
             border: 1px solid var(--border);
             border-radius: var(--radius);
         }
+
         .entry-stats .save-queue {
             font-size: 11px;
         }
+
         .entry-stats .save-queue.saving {
             color: var(--info);
         }
+
         .entry-stats .save-queue.done {
             color: var(--success);
         }
+
         .entry-stats .save-queue.error {
             color: var(--danger);
         }
@@ -229,6 +301,7 @@
             color: var(--text-secondary);
             font-size: 14px;
         }
+
         .entry-empty .empty-icon {
             font-size: 40px;
             display: block;
@@ -236,107 +309,461 @@
         }
 
         @media (max-width: 768px) {
-            .entry-table thead th:nth-child(1) { width: 36px; }
-            .entry-table thead th:nth-child(2) { width: 50px; }
-            .entry-table thead th:nth-child(3) { width: 100px; }
-            .entry-table .col-glyph { font-size: 22px; }
-            .entry-stats { flex-direction: column; gap: 4px; }
+            .entry-table thead th:nth-child(1) {
+                width: 36px;
+            }
+
+            .entry-table thead th:nth-child(2) {
+                width: 50px;
+            }
+
+            .entry-table thead th:nth-child(3) {
+                width: 100px;
+            }
+
+            .entry-table .col-glyph {
+                font-size: 22px;
+            }
+
+            .entry-stats {
+                flex-direction: column;
+                gap: 4px;
+            }
         }
     </style>
 </head>
+
 <body>
 
-<header class="header">
-    <h1>Unified Yi <span class="yi-demo">ꆈꌠ</span></h1>
-    <nav>
-        <a href="/">📚 Browse</a>
-        <a href="/align.html">🔗 Align</a>
-        <a href="/groups.html">📋 Groups</a>
-        <a href="/entry.html" class="active">✏️ Entry</a>
-    </nav>
-</header>
+    <header class="header">
+        <h1>Unified Yi <span class="yi-demo">ꆈꌠ</span></h1>
+        <nav>
+            <a href="/">📚 Browse</a>
+            <a href="/align.html">🔗 Align</a>
+            <a href="/groups.html">📋 Groups</a>
+            <a href="/radicals.html">🔤 Radicals</a>
+            <a href="/entry.html" class="active">✏️ Entry</a>
+        </nav>
+    </header>
 
-<div class="container">
+    <div class="container">
 
-    <!-- ─── Toolbar ─── -->
-    <div class="toolbar" style="margin-bottom:16px;">
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;flex:1;">
-            <label style="font-size:13px;font-weight:600;color:var(--text-secondary);white-space:nowrap;">来源：</label>
-            <select id="sourceSelect" style="padding:6px 10px;border:1px solid var(--border);border-radius:var(--radius);font-size:14px;background:var(--bg);">
-                <option value="">— 选择来源 —</option>
-            </select>
-            <span id="totalInfo" style="font-size:12px;color:var(--text-secondary);"></span>
-        </div>
-        <div style="display:flex;gap:8px;align-items:center;">
-            <span id="loadStatus" style="font-size:12px;color:var(--text-secondary);"></span>
-            <button class="btn btn-sm" onclick="entryApp.jumpToRef()">🔍 跳转 Ref</button>
-            <input type="text" id="refInput" placeholder="Ref (如 Q0-00101)" style="padding:4px 8px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;background:var(--bg);width:120px;">
-        </div>
-    </div>
-
-    <div style="margin-bottom:12px;">
-        <h2 style="font-size:16px;margin-bottom:4px;">✏️ 批量录入</h2>
-        <p style="font-size:13px;color:var(--text-secondary);">
-            点击注音或释义单元格直接编辑，自动格式化后保存到 TSV 文件。
-        </p>
-    </div>
-
-    <div class="switch-wrap">
-        <input type="checkbox" id="autoFormat" checked>
-        <label for="autoFormat">编辑时实时自动格式化</label>
-    </div>
-
-    <!-- ─── Table ─── -->
-    <div class="entry-table-wrap" id="entryTableWrap">
-        <div class="entry-empty" id="entryEmpty">
-            <span class="empty-icon">📋</span>
-            请先选择一个来源
-        </div>
-        <table class="entry-table" id="entryTable" style="display:none;">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>字形</th>
-                    <th>注音 Pronunciation</th>
-                    <th>释义 Meaning</th>
-                </tr>
-            </thead>
-            <tbody id="entryTableBody"></tbody>
-        </table>
-    </div>
-
-    <!-- ─── Pagination ─── -->
-    <div class="entry-pagination" id="entryPagination" style="display:none;"></div>
-
-    <!-- ─── Stats ─── -->
-    <div class="entry-stats" id="entryStats" style="display:none;">
-        <span id="statsInfo"></span>
-        <span class="save-queue" id="saveStatus"></span>
-    </div>
-
-    <!-- ─── Quick reference ─── -->
-    <section style="margin-top:16px;">
-        <details style="font-size:13px;color:var(--text-secondary);">
-            <summary style="cursor:pointer;font-weight:600;">📖 查看已有数据格式示例</summary>
-            <div style="margin-top:8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px;font-size:12px;line-height:2;">
-                <table class="char-table" style="font-size:12px;">
-                    <thead><tr><th>注音</th><th>释义</th><th>说明</th></tr></thead>
-                    <tbody>
-                        <tr><td style="font-family:'Gentium Plus',serif;">pi⁵⁵</td><td>关，闭。</td><td>简单释义</td></tr>
-                        <tr><td style="font-family:'Gentium Plus',serif;">pi³³</td><td>（形容词缀）〖尖溜溜〗。</td><td>带括号注释 + 〖〗</td></tr>
-                        <tr><td style="font-family:'Gentium Plus',serif;">pi¹³</td><td>根由。〖格言，谚语〗。</td><td>多句 + 〖〗</td></tr>
-                        <tr><td style="font-family:'Gentium Plus',serif;">pi¹³</td><td>雄性（指禽类）。〖布拖〗（县名）。</td><td>混合格式</td></tr>
-                        <tr><td style="font-family:'Gentium Plus',serif;">ʔæ⁵⁵</td><td>ai。〖艾滋病〗，〖爱辉〗。</td><td>连续〖〗用逗号分隔</td></tr>
-                    </tbody>
-                </table>
+        <!-- ─── Toolbar ─── -->
+        <div class="toolbar" style="margin-bottom:16px;">
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;flex:1;">
+                <label
+                    style="font-size:13px;font-weight:600;color:var(--text-secondary);white-space:nowrap;">来源：</label>
+                <select id="sourceSelect"
+                    style="padding:6px 10px;border:1px solid var(--border);border-radius:var(--radius);font-size:14px;background:var(--bg);">
+                    <option value="">— 选择来源 —</option>
+                </select>
+                <span id="totalInfo" style="font-size:12px;color:var(--text-secondary);"></span>
             </div>
-        </details>
-    </section>
+            <div style="display:flex;gap:8px;align-items:center;">
+                <span id="loadStatus" style="font-size:12px;color:var(--text-secondary);"></span>
+                <button class="btn btn-sm" onclick="entryApp.jumpToRef()">🔍 跳转 Ref</button>
+                <input type="text" id="refInput" placeholder="Ref (如 Q0-00101)"
+                    style="padding:4px 8px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;background:var(--bg);width:120px;">
+                <button class="btn btn-sm" onclick="entryApp.ocr.open()" style="margin-left:8px;">📷 OCR</button>
+            </div>
+        </div>
 
-</div>
+        <div style="margin-bottom:12px;">
+            <h2 style="font-size:16px;margin-bottom:4px;">✏️ 批量录入</h2>
+            <p style="font-size:13px;color:var(--text-secondary);">
+                点击注音或释义单元格直接编辑，自动格式化后保存到 TSV 文件。
+            </p>
+        </div>
 
-<script src="/js/api.js"></script>
-<script src="/js/ui.js"></script>
-<script src="/js/entry.js"></script>
+        <div class="switch-wrap">
+            <input type="checkbox" id="autoFormat" checked>
+            <label for="autoFormat">编辑时实时自动格式化</label>
+        </div>
+
+        <!-- ─── Table ─── -->
+        <div class="entry-table-wrap" id="entryTableWrap">
+            <div class="entry-empty" id="entryEmpty">
+                <span class="empty-icon">📋</span>
+                请先选择一个来源
+            </div>
+            <table class="entry-table" id="entryTable" style="display:none;">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>字形</th>
+                        <th>注音 Pronunciation</th>
+                        <th>释义 Meaning</th>
+                    </tr>
+                </thead>
+                <tbody id="entryTableBody"></tbody>
+            </table>
+        </div>
+
+        <!-- ─── Pagination ─── -->
+        <div class="entry-pagination" id="entryPagination" style="display:none;"></div>
+
+        <!-- ─── Stats ─── -->
+        <div class="entry-stats" id="entryStats" style="display:none;">
+            <span id="statsInfo"></span>
+            <span class="save-queue" id="saveStatus"></span>
+        </div>
+
+        <!-- ─── Quick reference ─── -->
+        <section style="margin-top:16px;">
+            <details style="font-size:13px;color:var(--text-secondary);">
+                <summary style="cursor:pointer;font-weight:600;">📖 查看已有数据格式示例</summary>
+                <div
+                    style="margin-top:8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px;font-size:12px;line-height:2;">
+                    <table class="char-table" style="font-size:12px;">
+                        <thead>
+                            <tr>
+                                <th>注音</th>
+                                <th>释义</th>
+                                <th>说明</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td style="font-family:'Gentium Plus',serif;">pi⁵⁵</td>
+                                <td>关，闭。</td>
+                                <td>简单释义</td>
+                            </tr>
+                            <tr>
+                                <td style="font-family:'Gentium Plus',serif;">pi³³</td>
+                                <td>（形容词缀）〖尖溜溜〗。</td>
+                                <td>带括号注释 + 〖〗</td>
+                            </tr>
+                            <tr>
+                                <td style="font-family:'Gentium Plus',serif;">pi¹³</td>
+                                <td>根由。〖格言，谚语〗。</td>
+                                <td>多句 + 〖〗</td>
+                            </tr>
+                            <tr>
+                                <td style="font-family:'Gentium Plus',serif;">pi¹³</td>
+                                <td>雄性（指禽类）。〖布拖〗（县名）。</td>
+                                <td>混合格式</td>
+                            </tr>
+                            <tr>
+                                <td style="font-family:'Gentium Plus',serif;">ʔæ⁵⁵</td>
+                                <td>ai。〖艾滋病〗，〖爱辉〗。</td>
+                                <td>连续〖〗用逗号分隔</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </details>
+        </section>
+
+    </div>
+
+    <!-- ─── OCR 浮动窗口 ─── -->
+    <div class="ocr-overlay" id="ocrOverlay" style="display:none;">
+        <div class="ocr-window" id="ocrWindow">
+            <div class="ocr-header" id="ocrHeader">
+                <span>📷 OCR 图片识别</span>
+                <button class="ocr-close-btn" onclick="entryApp.ocr.close()" title="关闭">✕</button>
+            </div>
+            <div class="ocr-body">
+                <div class="ocr-image-zone" id="ocrImageZone" tabindex="0">
+                    <div class="ocr-image-placeholder" id="ocrImagePlaceholder">
+                        <span class="ocr-placeholder-icon">🖼️</span>
+                        <span class="ocr-placeholder-text">点击此处，然后按 Ctrl+V 粘贴图片</span>
+                    </div>
+                    <img id="ocrImagePreview" class="ocr-image-preview" style="display:none;" alt="粘贴的图片">
+                </div>
+                <div class="ocr-config">
+                    <div class="ocr-config-row">
+                        <label class="ocr-config-label">
+                            <span>API Key</span>
+                            <input type="password" id="ocrApiKey" class="ocr-config-input" placeholder="sk-..." required
+                                autocomplete="off">
+                        </label>
+                        <label class="ocr-config-label">
+                            <span>Base URL</span>
+                            <input type="text" id="ocrBaseUrl" class="ocr-config-input"
+                                placeholder="https://api.openai.com/v1" required autocomplete="off">
+                        </label>
+                    </div>
+                    <div class="ocr-config-row">
+                        <label class="ocr-config-label">
+                            <span>模型</span>
+                            <input type="text" id="ocrModel" class="ocr-config-input" placeholder="先点击测试加载模型" list="ocrModelList" required autocomplete="off">
+                            <datalist id="ocrModelList"></datalist>
+                        </label>
+                        <label class="ocr-config-label ocr-config-label-sm">
+                            <span>协议</span>
+                            <select id="ocrProvider" class="ocr-config-input">
+                                <option value="openai" selected>OpenAI 兼容</option>
+                                <option value="anthropic">Anthropic</option>
+                            </select>
+                        </label>
+                        <button class="btn btn-sm" onclick="entryApp.ocr.testConnection()" id="ocrTestBtn"
+                            style="white-space:nowrap;flex-shrink:0;align-self:flex-end;">🔌 测试</button>
+                    </div>
+                </div>
+                <div class="ocr-result-area">
+                    <textarea id="ocrResultText" class="ocr-result-textarea" placeholder="OCR 识别结果将显示在此处，可编辑..."
+                        readonly></textarea>
+                </div>
+            </div>
+            <div class="ocr-footer">
+                <button class="btn btn-sm" onclick="entryApp.ocr.recognize()" id="ocrRecognizeBtn">🔍 识别</button>
+                <button class="btn btn-sm btn-primary" onclick="entryApp.ocr.insert()" id="ocrInsertBtn">📥 插入</button>
+                <button class="btn btn-sm" onclick="entryApp.ocr.clear()">🗑️ 清空</button>
+                <span id="ocrStatus" class="ocr-status"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── OCR 窗口样式 ─── -->
+    <style>
+        .ocr-overlay {
+            position: fixed;
+            inset: 0;
+            background: transparent;
+            z-index: 1000;
+            pointer-events: none;
+        }
+
+        .ocr-window.dragging {
+            opacity: 0.7;
+            transition: opacity 0.1s;
+        }
+
+        .ocr-window {
+            position: fixed;
+            width: 480px;
+            max-height: 90vh;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+            display: flex;
+            flex-direction: column;
+            z-index: 1001;
+            cursor: default;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: auto;
+        }
+
+        .ocr-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 14px;
+            background: var(--accent-bg);
+            border-bottom: 1px solid var(--border);
+            border-radius: var(--radius) var(--radius) 0 0;
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--accent);
+            cursor: move;
+            user-select: none;
+        }
+
+        .ocr-close-btn {
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            padding: 0 4px;
+            line-height: 1;
+        }
+
+        .ocr-close-btn:hover {
+            color: var(--danger);
+        }
+
+        .ocr-body {
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .ocr-image-zone {
+            border: 2px dashed var(--border);
+            border-radius: var(--radius);
+            min-height: 180px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            position: relative;
+            background: var(--bg);
+            transition: border-color 0.2s;
+            outline: none;
+        }
+
+        .ocr-image-zone:hover {
+            border-color: var(--accent-light);
+        }
+
+        .ocr-image-zone:focus {
+            border-color: var(--accent);
+        }
+
+        .ocr-image-zone.has-image {
+            border-style: solid;
+            border-color: var(--accent-light);
+        }
+
+        .ocr-image-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-secondary);
+            pointer-events: none;
+        }
+
+        .ocr-placeholder-icon {
+            font-size: 40px;
+        }
+
+        .ocr-placeholder-text {
+            font-size: 13px;
+        }
+
+        .ocr-image-preview {
+            max-width: 100%;
+            max-height: 300px;
+            object-fit: contain;
+            border-radius: 4px;
+        }
+
+        .ocr-result-area {
+            flex: 1;
+        }
+
+        .ocr-config {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .ocr-config-row {
+            display: flex;
+            gap: 8px;
+            align-items: flex-end;
+        }
+
+        .ocr-config-label {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            font-size: 11px;
+            color: var(--text-secondary);
+            flex: 1;
+        }
+
+        .ocr-config-label-sm {
+            flex: 0.6;
+        }
+
+        .ocr-config-input {
+            padding: 5px 8px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            font-size: 12px;
+            font-family: inherit;
+            background: var(--bg);
+            color: var(--text);
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .ocr-config-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: inset 0 0 0 1px var(--accent);
+        }
+
+        .ocr-config-input::placeholder {
+            color: #bbb;
+            font-size: 11px;
+        }
+
+        .ocr-config .btn {
+            margin-bottom: 0;
+            height: 28px;
+            line-height: 1;
+            padding: 0 10px;
+            font-size: 12px;
+        }
+
+        .ocr-result-textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 8px 10px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            font-size: 14px;
+            font-family: inherit;
+            background: var(--surface);
+            color: var(--text);
+            resize: vertical;
+            line-height: 1.6;
+        }
+
+        .ocr-result-textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: inset 0 0 0 1px var(--accent);
+        }
+
+        .ocr-footer {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            border-top: 1px solid var(--border);
+            flex-shrink: 0;
+            height: 40px;
+            box-sizing: border-box;
+        }
+
+        .ocr-footer button:disabled {
+            opacity: 0.5;
+        }
+
+        .ocr-footer button {
+            line-height: 1;
+        }
+
+        .ocr-status {
+            margin-left: auto;
+            font-size: 12px;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            max-width: 160px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1;
+        }
+
+        .ocr-status.loading {
+            color: var(--info);
+        }
+
+        .ocr-status.success {
+            color: var(--success);
+        }
+
+        .ocr-status.error {
+            color: var(--danger);
+        }
+    </style>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/ui.js"></script>
+    <script src="/js/ocr.js"></script>
+    <script src="/js/entry.js"></script>
 </body>
+
 </html>

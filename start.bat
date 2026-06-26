@@ -37,7 +37,7 @@ if exist "%~dp0.venv\Scripts\activate.bat" (
 
 :: ─── Install dependencies ───
 echo [2/3] Installing Python dependencies...
-python -m pip install -q fastapi uvicorn pyyaml
+python -m pip install -q -r src\backend\requirements.txt
 echo   Dependencies ready.
 echo.
 

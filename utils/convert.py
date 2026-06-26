@@ -10,7 +10,11 @@ def to_json(file: Path):
 
     res = []
     for line in lines:
-        glyf, src, pron, mean = line.strip().split("\t")
+        parts = line.strip().split("\t")
+        glyf = parts[0]
+        src = parts[1]
+        pron = parts[2] if len(parts) > 2 else ""
+        mean = parts[3] if len(parts) > 3 else ""
         res.append({"glyf": glyf, "src": src, "pron": pron, "mean": mean})
 
     if not (data_dir.parent / "temp").exists():
