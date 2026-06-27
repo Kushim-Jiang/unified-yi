@@ -134,3 +134,16 @@ function scoreColor(score) {
   if (score >= 0.4) return "medium";
   return "bad";
 }
+
+// ─── 黑夜/白天切换 ─────────────────────────────────────────────
+
+(function initTheme() {
+  for (const btn of document.querySelectorAll(".theme-toggle")) {
+    btn.addEventListener("click", () => {
+      const isDark = document.body.classList.toggle("dark-mode");
+      for (const b of document.querySelectorAll(".theme-toggle")) {
+        b.textContent = isDark ? "☀️" : "🌙";
+      }
+    });
+  }
+})();

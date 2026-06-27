@@ -10,7 +10,7 @@ class BrowseApp {
       sources: [],
       currentSource: null,
       currentPage: 1,
-      pageSize: 100,
+      pageSize: 10,
       searchQuery: "",
       selectedChar: null,
       alignedKeys: new Set(),
@@ -19,6 +19,7 @@ class BrowseApp {
   }
 
   async init() {
+    this._injectScrollbarStyle();
     await this._loadAlignedKeys();
     await this._loadSources();
     const searchInput = document.getElementById("searchInput");
@@ -27,6 +28,36 @@ class BrowseApp {
         if (e.key === "Enter") this.doSearch();
       });
     }
+  }
+
+  _injectScrollbarStyle() {
+    const style = document.createElement("style");
+    style.textContent = `
+      html::-webkit-scrollbar,
+      .sugg-section .suggestions-list::-webkit-scrollbar {
+        width: 5px !important;
+        height: 5px !important;
+      }
+      html::-webkit-scrollbar-track,
+      .sugg-section .suggestions-list::-webkit-scrollbar-track {
+        background: transparent !important;
+      }
+      html::-webkit-scrollbar-thumb,
+      .sugg-section .suggestions-list::-webkit-scrollbar-thumb {
+        background: var(--scrollbar-thumb) !important;
+        border-radius: 4px !important;
+      }
+      html::-webkit-scrollbar-thumb:hover,
+      .sugg-section .suggestions-list::-webkit-scrollbar-thumb:hover {
+        background: var(--scrollbar-thumb-hover) !important;
+      }
+      html,
+      .sugg-section .suggestions-list {
+        scrollbar-width: thin !important;
+        scrollbar-color: var(--scrollbar-thumb) transparent !important;
+      }
+    `;
+    document.head.appendChild(style);
   }
 
   // ── Sources ────────────────────────────────────────────
@@ -206,55 +237,73 @@ class BrowseApp {
     if (!area) return;
 
     try {
-      const result = await ApiClient.fetch(`/suggest-alignments/${source}/${srcRef}?method=combined&top_k=15`);
-      this._renderSuggestions(result.suggestions);
+      const baseUrl = `/suggest-alignments/${source}/${srcRef}`;
+      const [pronRes, meanRes, radRes, combRes] = await Promise.all([
+        ApiClient.fetch(`${baseUrl}?method=pronunciation&top_k=12`),
+        ApiClient.fetch(`${baseUrl}?method=meaning&top_k=12`),
+        ApiClient.fetch(`${baseUrl}?method=radical&top_k=12`),
+        ApiClient.fetch(`${baseUrl}?method=combined&top_k=12`),
+      ]);
+      this._renderSuggestions(pronRes.suggestions, meanRes.suggestions, radRes.suggestions, combRes.suggestions);
     } catch (err) {
       area.innerHTML = `<p style="color:var(--text-secondary)">Could not load suggestions: ${err.message}</p>`;
     }
   }
 
-  _renderSuggestions(suggestions) {
+  _renderSuggestions(pronSuggestions, meanSuggestions, radSuggestions, combSuggestions) {
     const area = document.getElementById("suggestionsArea");
     if (!area) return;
 
-    if (suggestions.length === 0) {
+    const hasAny = pronSuggestions?.length || meanSuggestions?.length || radSuggestions?.length || combSuggestions?.length;
+    if (!hasAny) {
       area.innerHTML = '<p style="color:var(--text-secondary)">No similar characters found</p>';
       return;
     }
 
-    area.innerHTML = `
-            <h4 style="margin-bottom:8px;color:var(--text-secondary);font-size:13px;">🔍 Suggested Matches (pronunciation + meaning + radical)</h4>
-            <div class="suggestions-list">
-                ${suggestions
-                  .map(
-                    (s) => `
-                    <div class="suggestion-item" onclick="app.quickAlign('${htmlEscape(this.state.currentSource)}', '${htmlEscape(this.state.selectedChar.src_ref)}', '${htmlEscape(s.source)}', '${htmlEscape(s.src_ref)}')">
-                        <span class="sugg-glyph">${s.glyph}</span>
-                        <div class="sugg-info">
-                            <div><strong>${htmlEscape(s.source)}</strong> · ${htmlEscape(s.src_ref)}</div>
-                            <div style="font-family:'Gentium Plus',serif;font-size:12px;color:var(--info);">/${htmlEscape(s.pronunciation)}/</div>
-                            <div style="font-size:12px;">${htmlEscape(s.meaning)}</div>
-                            <div class="score-bar">
-                                <div class="fill ${scoreColor(s.combined_score)}" style="width:${(s.combined_score * 100).toFixed(0)}%"></div>
-                            </div>
-                        </div>
-                        <div class="sugg-score">${(s.combined_score * 100).toFixed(0)}%</div>
-                    </div>
-                `,
-                  )
-                  .join("")}
+    const renderList = (items, scoreField, isDistance) => {
+      if (!items || items.length === 0) {
+        return '<div style="color:var(--text-secondary);font-size:12px;padding:8px 12px;">无匹配</div>';
+      }
+      return items
+        .map((s) => {
+          const rawScore = isDistance ? 1 - (s[scoreField] ?? 0) : (s[scoreField] ?? 0);
+          const pct = (rawScore * 100).toFixed(0);
+          return `
+            <div class="suggestion-item">
+              <span class="sugg-glyph">${s.glyph}</span>
+              <div class="sugg-info">
+                <div><strong>${htmlEscape(s.source)}</strong> · ${htmlEscape(s.src_ref)}</div>
+                <div style="font-family:'Gentium Plus',serif;font-size:11px;color:var(--info);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">/${htmlEscape(s.pronunciation)}/</div>
+                <div style="font-size:11px;word-break:break-word;">${htmlEscape(s.meaning)}</div>
+              </div>
+              <div class="sugg-col-score" style="min-width:48px;">${pct}%<div class="score-bar"><div class="fill ${scoreColor(rawScore)}" style="width:${pct}%"></div></div></div>
             </div>
-        `;
-  }
+          `;
+        })
+        .join("");
+    };
 
-  async quickAlign(sourceA, refA, sourceB, refB) {
-    try {
-      await ApiClient.post("/alignments", { entries: [refA, refB], note: "" });
-      Notification.show(`Aligned: ${refA} ↔ ${refB}`, "success");
-    } catch (err) {
-      if (err.message.includes("Duplicate source")) Notification.show("Already in group", "info");
-      else Notification.show("Failed to align: " + err.message, "error");
-    }
+    area.innerHTML = `
+      <h4 style="margin-bottom:8px;color:var(--text-secondary);font-size:13px;">🔍 Suggested Matches</h4>
+      <div class="sugg-sections" style="display:flex;flex-direction:row;gap:12px;">
+        <div class="sugg-section" style="flex:1;min-width:0;">
+          <div class="sugg-section-title">🎙️ 读音相似</div>
+          <div class="suggestions-list" style="margin-top:0;">${renderList(pronSuggestions, "distance", true)}</div>
+        </div>
+        <div class="sugg-section" style="flex:1;min-width:0;">
+          <div class="sugg-section-title">📖 释义相似</div>
+          <div class="suggestions-list" style="margin-top:0;">${renderList(meanSuggestions, "similarity", false)}</div>
+        </div>
+        <div class="sugg-section" style="flex:1;min-width:0;">
+          <div class="sugg-section-title">🔤 部首相似</div>
+          <div class="suggestions-list" style="margin-top:0;">${renderList(radSuggestions, "rs_similarity", false)}</div>
+        </div>
+        <div class="sugg-section" style="flex:1;min-width:0;">
+          <div class="sugg-section-title">📊 综合相似</div>
+          <div class="suggestions-list" style="margin-top:0;">${renderList(combSuggestions, "combined_score", false)}</div>
+        </div>
+      </div>
+    `;
   }
 
   async _loadAlignedKeys() {

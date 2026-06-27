@@ -13,6 +13,13 @@ class RadicalApp {
     this.allData = []; // all characters from current source
     this.radicalList = []; // ordered radical glyphs
     this.selectedGlyph = null; // currently selected character glyph
+    this.currentPage = 1;
+
+    // 成批保存：排队 + 防抖
+    this._pendingSaves = new Map(); // "source:glyph" → {source, glyph, radical, other_stroke}
+    this._flushTimer = null;
+    this._flushRunning = false;
+    this._saveStatus = this._createStatusEl();
 
     this.sourceSelect = this.$("sourceSelect");
     this.filterSelect = this.$("filterSelect");
@@ -26,11 +33,86 @@ class RadicalApp {
     this.btnClear = this.$("btnClear");
   }
 
+  // ── 成批保存 ────────────────────────────────────────────────
+
+  _createStatusEl() {
+    const el = document.createElement("div");
+    el.className = "save-queue";
+    el.style.cssText = "font-size:12px;color:var(--text-secondary);text-align:right;margin-top:8px;";
+    document.querySelector(".rs-layout .rs-sidebar")?.appendChild(el);
+    return el;
+  }
+
+  _queueSave(source, glyph, radical, other_stroke) {
+    const key = `${source}:${glyph}`;
+    this._pendingSaves.set(key, { source, glyph, radical, other_stroke });
+    this._updateSaveStatus();
+    this._debounceFlush();
+  }
+
+  _updateSaveStatus() {
+    const n = this._pendingSaves.size;
+    if (!this._saveStatus) return;
+    if (n === 0) {
+      this._saveStatus.textContent = "";
+      return;
+    }
+    this._saveStatus.textContent = `⏳ 待保存 ${n} 项…`;
+  }
+
+  _debounceFlush() {
+    clearTimeout(this._flushTimer);
+    this._flushTimer = setTimeout(() => this._flushPending(), 600);
+  }
+
+  async _flushPending() {
+    if (this._flushRunning) return;
+    if (this._pendingSaves.size === 0) return;
+
+    this._flushRunning = true;
+    clearTimeout(this._flushTimer);
+
+    const entries = [...this._pendingSaves.values()];
+    this._pendingSaves.clear();
+
+    let success = 0;
+    let fail = 0;
+    for (const { source, glyph, radical, other_stroke } of entries) {
+      try {
+        await ApiClient.put(
+          `/radical-data/${source}/${encodeURIComponent(glyph)}` +
+          `?radical=${encodeURIComponent(radical)}&other_stroke=${encodeURIComponent(other_stroke)}`,
+        );
+        success++;
+      } catch (e) {
+        fail++;
+        console.warn("Save failed for", glyph, e.message);
+      }
+    }
+
+    if (this._saveStatus) {
+      if (fail === 0) {
+        this._saveStatus.textContent = `✅ 已保存 ${success} 项`;
+      } else {
+        this._saveStatus.textContent = `⚠️ 保存 ${success}/${success + fail} 项完成`;
+      }
+      setTimeout(() => { if (this._saveStatus) this._saveStatus.textContent = ""; }, 2500);
+    }
+
+    this._flushRunning = false;
+    if (this._pendingSaves.size > 0) this._debounceFlush();
+  }
+
+  async _flushNow() {
+    clearTimeout(this._flushTimer);
+    if (this._pendingSaves.size > 0) await this._flushPending();
+  }
+
   init() {
     this._loadSources();
     this.sourceSelect.addEventListener("change", () => this._onSourceChange());
-    this.filterSelect.addEventListener("change", () => this._renderGrid());
-    this.searchInput.addEventListener("input", () => this._renderGrid());
+    this.filterSelect.addEventListener("change", () => { this.currentPage = 1; this._renderGrid(); });
+    this.searchInput.addEventListener("input", () => { this.currentPage = 1; this._renderGrid(); });
 
     // Enter key: save current, copy RS to next unassigned, select it
     document.addEventListener("keydown", (e) => {
@@ -59,6 +141,10 @@ class RadicalApp {
   }
 
   async _onSourceChange() {
+    // 切源前先刷出待保存变更
+    await this._flushNow();
+    this._saveStatus = this._createStatusEl();
+
     this.currentSource = this.sourceSelect.value;
     this.selectedGlyph = null;
     this._clearDetail();
@@ -103,15 +189,21 @@ class RadicalApp {
   }
 
   _renderGrid() {
-    const data = this._getFilteredData();
+    const allData = this._getFilteredData();
+    const total = allData.length;
+    const ps = 100;
+    const totalPages = Math.max(1, Math.ceil(total / ps));
+    if (this.currentPage > totalPages) this.currentPage = totalPages;
+    const start = (this.currentPage - 1) * ps;
+    const pageData = allData.slice(start, start + ps);
 
-    if (data.length === 0) {
+    if (pageData.length === 0) {
       this.charGrid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-secondary);">没有匹配的字符</div>';
       return;
     }
 
     let html = "";
-    for (const item of data) {
+    for (const item of pageData) {
       const hasRs = item.has_rs;
       const rads = item.radicals || [];
       const strokes = item.strokes || [];
@@ -135,8 +227,27 @@ class RadicalApp {
       html += `</div>`;
     }
 
-    this.charGrid.innerHTML = html;
-    this._renderStats();
+    // 分页控件
+    let pagHtml = "";
+    if (totalPages > 1) {
+      pagHtml = `<div class="rs-pagination">
+        <button ${this.currentPage <= 1 ? "disabled" : ""} onclick="rsApp.goToPage(${this.currentPage - 1})">←</button>
+        <span class="page-info">${this.currentPage}/${totalPages}</span>
+        <button ${this.currentPage >= totalPages ? "disabled" : ""} onclick="rsApp.goToPage(${this.currentPage + 1})">→</button>
+      </div>`;
+    }
+
+    this.charGrid.innerHTML = html + pagHtml;
+    this._renderStats(total, this.currentPage, totalPages);
+  }
+
+  goToPage(page) {
+    const allData = this._getFilteredData();
+    const ps = 100;
+    const totalPages = Math.max(1, Math.ceil(allData.length / ps));
+    if (page < 1 || page > totalPages) return;
+    this.currentPage = page;
+    this._renderGrid();
   }
 
   _renderPalette() {
@@ -158,17 +269,37 @@ class RadicalApp {
     this.paletteGrid.innerHTML = html;
   }
 
-  _renderStats() {
+  _renderStats(filteredTotal, page, totalPages) {
     const total = this.allData.length;
     const assigned = this.allData.filter((d) => d.has_rs).length;
     const unassigned = total - assigned;
-    this.statsInfo.innerHTML =
+    let html =
       `共 <strong>${total}</strong> 字 · ` + `<span class="assigned">已标注 <strong>${assigned}</strong></span> · ` + `<span class="unassigned">未标注 <strong>${unassigned}</strong></span>`;
+    if (filteredTotal !== undefined && totalPages > 1) {
+      const ps = 100;
+      const start = (page - 1) * ps + 1;
+      const end = Math.min(page * ps, filteredTotal);
+      html += ` · 页 ${page}/${totalPages}（${start}-${end}）`;
+    }
+    this.statsInfo.innerHTML = html;
   }
 
   // ── Selection ─────────────────────────────────────────
 
   selectGlyph(glyph) {
+    // 如果当前页没有这个字，先翻到它所在的页
+    const card = this.charGrid.querySelector(`.rs-card[data-glyph="${htmlEscape(glyph)}"]`);
+    if (!card) {
+      const filtered = this._getFilteredData();
+      const idx = filtered.findIndex((d) => d.glyph === glyph);
+      if (idx >= 0) {
+        this.currentPage = Math.floor(idx / 100) + 1;
+        this._renderGrid();
+      } else {
+        return;
+      }
+    }
+
     if (this.selectedGlyph) {
       const prev = this.charGrid.querySelector(`.rs-card[data-glyph="${htmlEscape(this.selectedGlyph)}"]`);
       if (prev) prev.classList.remove("selected");
@@ -176,8 +307,8 @@ class RadicalApp {
 
     this.selectedGlyph = glyph;
 
-    const card = this.charGrid.querySelector(`.rs-card[data-glyph="${htmlEscape(glyph)}"]`);
-    if (card) card.classList.add("selected");
+    const newCard = this.charGrid.querySelector(`.rs-card[data-glyph="${htmlEscape(glyph)}"]`);
+    if (newCard) newCard.classList.add("selected");
 
     this._updateDetail();
     this._renderPalette();
@@ -335,13 +466,9 @@ class RadicalApp {
     // Sync string fields
     item.other_stroke = item.strokes.join(",");
 
-    const glyph = this.selectedGlyph;
-    try {
-      await ApiClient.put(`/radical-data/${this.currentSource}/${encodeURIComponent(glyph)}` + `?radical=${encodeURIComponent(item.radical)}&other_stroke=${encodeURIComponent(item.other_stroke)}`);
-      this._renderGrid();
-    } catch (e) {
-      Notification.show("保存失败: " + e.message, "error");
-    }
+    // 加入保存队列（成批写入，避免并发竞争）
+    this._queueSave(this.currentSource, this.selectedGlyph, item.radical, item.other_stroke);
+    this._renderGrid();
   }
 
   // ── Quick annotation: Enter copies RS to next glyph ─────
@@ -386,14 +513,8 @@ class RadicalApp {
       nextItem.other_stroke = tgtStrokes.join(",");
       nextItem.has_rs = tgtRads.length > 0;
 
-      // Save next item
-      try {
-        await ApiClient.put(
-          `/radical-data/${this.currentSource}/${encodeURIComponent(nextItem.glyph)}` + `?radical=${encodeURIComponent(nextItem.radical)}&other_stroke=${encodeURIComponent(nextItem.other_stroke)}`,
-        );
-      } catch (e) {
-        Notification.show("保存失败: " + e.message, "error");
-      }
+      // 加入保存队列
+      this._queueSave(this.currentSource, nextItem.glyph, nextItem.radical, nextItem.other_stroke);
     }
 
     // Select next
