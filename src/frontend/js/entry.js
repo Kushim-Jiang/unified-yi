@@ -29,6 +29,11 @@ class EntryGrid {
     // OCR 浮动窗口
     this.ocr = new OcrWindow(this);
 
+    // 成批保存：排队 + 防抖
+    this._pendingSaves = new Map();  // "source:srcRef:col" → {source, srcRef, isPron, value}
+    this._flushTimer = null;
+    this._flushRunning = false;
+
     // DOM refs
     this.sourceSelect = this.$("sourceSelect");
     this.refInput = this.$("refInput");
@@ -42,6 +47,85 @@ class EntryGrid {
     this.statsEl = this.$("entryStats");
     this.statsInfo = this.$("statsInfo");
     this.saveStatus = this.$("saveStatus");
+  }
+
+  // ── 成批保存 ────────────────────────────────────────────────
+
+  _queueSave(source, srcRef, isPron, value) {
+    const key = `${source}:${srcRef}:${isPron ? "pron" : "mean"}`;
+    this._pendingSaves.set(key, { source, srcRef, isPron, value });
+    this._updateSaveStatus();
+    this._debounceFlush();
+  }
+
+  _updateSaveStatus() {
+    const n = this._pendingSaves.size;
+    if (n === 0) {
+      this.saveStatus.textContent = "";
+      this.saveStatus.className = "save-queue";
+      return;
+    }
+    this.saveStatus.textContent = `⏳ 待保存 ${n} 项…`;
+    this.saveStatus.className = "save-queue saving";
+  }
+
+  _debounceFlush() {
+    clearTimeout(this._flushTimer);
+    this._flushTimer = setTimeout(() => this._flushPending(), 600);
+  }
+
+  async _flushPending() {
+    if (this._flushRunning) return;
+    if (this._pendingSaves.size === 0) return;
+
+    this._flushRunning = true;
+    clearTimeout(this._flushTimer);
+
+    const entries = [...this._pendingSaves.values()];
+    this._pendingSaves.clear();
+
+    let success = 0;
+    let fail = 0;
+    for (const { source, srcRef, isPron, value } of entries) {
+      try {
+        await ApiClient.put(`/characters/${source}/${encodeURIComponent(srcRef)}`, {
+          pronunciation: isPron ? value : undefined,
+          meaning: isPron ? undefined : value,
+        });
+        success++;
+      } catch (e) {
+        fail++;
+        console.warn("Save failed for", srcRef, e.message);
+      }
+    }
+
+    if (fail === 0) {
+      this.saveStatus.textContent = `✅ 已保存 ${success} 项`;
+      this.saveStatus.className = "save-queue done";
+    } else {
+      this.saveStatus.textContent = `⚠️ 保存 ${success}/${success + fail} 项完成`;
+      this.saveStatus.className = "save-queue done";
+    }
+    clearTimeout(this._saveStatusTimer);
+    this._saveStatusTimer = setTimeout(() => {
+      this.saveStatus.textContent = "";
+      this.saveStatus.className = "save-queue";
+    }, 2500);
+
+    this._flushRunning = false;
+
+    // 如果排队期间又有新变更，再刷一次
+    if (this._pendingSaves.size > 0) {
+      this._debounceFlush();
+    }
+  }
+
+  // ── 换页时强制刷出 ──────────────────────────────────────────
+  async _flushNow() {
+    clearTimeout(this._flushTimer);
+    if (this._pendingSaves.size > 0) {
+      await this._flushPending();
+    }
   }
 
   init() {
@@ -83,6 +167,9 @@ class EntryGrid {
 
   async loadPage(page) {
     if (!this.currentSource) return;
+
+    // 换页前先把待保存的变更刷出
+    await this._flushNow();
 
     this.currentPage = page;
     this.loadStatus.textContent = "⏳ 加载中…";
@@ -352,41 +439,15 @@ class EntryGrid {
       return;
     }
 
-    // Save indicator
-    this.saveStatus.textContent = "⏳ 保存中…";
-    this.saveStatus.className = "save-queue saving";
+    // Show checkmark indicator after commit
+    const indicator = document.createElement("span");
+    indicator.className = "cell-save-indicator";
+    indicator.textContent = "✓";
+    cell.appendChild(indicator);
+    setTimeout(() => indicator.remove(), 1500);
 
-    try {
-      await ApiClient.put(`/characters/${source}/${encodeURIComponent(srcRef)}`, {
-        pronunciation: item.pronunciation,
-        meaning: item.meaning,
-      });
-      // Show brief success indicator
-      const indicator = document.createElement("span");
-      indicator.className = "cell-save-indicator";
-      indicator.textContent = "✓";
-      cell.appendChild(indicator);
-      setTimeout(() => indicator.remove(), 1500);
-
-      this.saveStatus.textContent = `✅ 已保存 ${srcRef}`;
-      this.saveStatus.className = "save-queue done";
-      // Clear status after 2s
-      clearTimeout(this._saveStatusTimer);
-      this._saveStatusTimer = setTimeout(() => {
-        this.saveStatus.textContent = "";
-        this.saveStatus.className = "save-queue";
-      }, 2000);
-    } catch (e) {
-      const indicator = document.createElement("span");
-      indicator.className = "cell-save-error cell-save-indicator";
-      indicator.textContent = "✗";
-      cell.appendChild(indicator);
-      setTimeout(() => indicator.remove(), 2000);
-
-      this.saveStatus.textContent = `❌ 保存失败 ${srcRef}: ${e.message}`;
-      this.saveStatus.className = "save-queue error";
-      Notification.show(`保存失败 ${srcRef}: ${e.message}`, "error");
-    }
+    // 加入保存队列（成批写入，避免并发竞争）
+    this._queueSave(source, srcRef, isPron, formatted);
   }
 
   // ── Jump to ref ───────────────────────────────────────
