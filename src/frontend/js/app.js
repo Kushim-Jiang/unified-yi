@@ -218,11 +218,12 @@ class BrowseApp {
 
     detail.innerHTML = `
             <div style="display:flex;align-items:center;gap:16px;padding:16px;background:var(--accent-bg);border-radius:var(--radius);margin-bottom:12px;">
-                <span style="font-family:'YiFont';font-size:48px;">${char.glyph}</span>
+                <span style="font-family:'YiFont','YiFontAlt','YiFontAltExtra';font-size:48px;">${char.glyph}</span>
                 <div>
                     <div style="font-weight:700;font-size:18px;">${htmlEscape(char.src_ref)}</div>
                     <div style="font-family:'Gentium Plus',serif;color:var(--info);">${htmlEscape(char.pronunciation)}</div>
                     <div>${htmlEscape(char.meaning)}</div>
+                    ${char.note ? `<div style="font-size:12px;color:var(--danger);">备注：${htmlEscape(char.note)}</div>` : ""}
                     <div style="font-size:12px;color:var(--text-secondary);">Source: ${source}</div>
                 </div>
             </div>

@@ -1,0 +1,86 @@
+# 彝语拼音方案（2010 正字法）↔ 国际音标 对应关系
+#
+# 用途：u3《通用规范彝文常用字字典》的「代表音」用的是彝语拼音，
+# 计算发音相似度前先按本表转成 IPA（见 src/backend/services/yi_pinyin.py）。
+#
+# 依据：《通用彝文规范方案》2010 正字法（北部方言 圣乍土语 / 喜德），
+#   见 贾海霞, 沙马拉毅 (2018)《通用彝文规范方案》的研制与发展前景展望，
+#   转写见 https://kushim-jiang.github.io/scripts/2024-09-27-latn/#yi-written-with-latin-in-2010-orthography
+#
+# 注意：
+#   - 声母按原表照录；⟨y⟩ 作声母是 /ʑ/，作韵母时是音节性近音（见 finals）。
+#   - 韵母 -r 表示紧喉/creaky，相似度计算只比较音质，因此 ur/yr 与 u/y 同值。
+#   - 声调：t=55, x=34, 不标=33, p=21。
+
+reference: "通用彝文规范方案 (2010) / Jia & Sha (2018)"
+
+initials:
+  b: p
+  p: pʰ
+  bb: b
+  nb: ᵐb
+  m: m
+  hm: m̥
+  f: f
+  v: v
+  z: ts
+  c: tsʰ
+  zz: dz
+  nz: ⁿdz
+  s: s
+  ss: z
+  d: t
+  t: tʰ
+  dd: d
+  nd: ⁿd
+  n: n
+  hn: n̥
+  l: l
+  hl: l̥
+  dl: ʈ
+  tl: ʈʰ
+  ddl: ɖ
+  ndl: ᶯɖ
+  nl: ɳ
+  zh: tʂ
+  ch: tʂʰ
+  rr: ɖʐ
+  nr: ᶯɖʐ
+  sh: ʂ
+  r: ʐ
+  j: tɕ
+  q: tɕʰ
+  jj: dʑ
+  nj: ᶮdʑ
+  ny: ɲ
+  x: ɕ
+  y: ʑ
+  g: k
+  k: kʰ
+  gg: ɡ
+  mg: ᵑɡ
+  ng: ŋ
+  hx: h
+  h: x
+  w: ɣ
+  wh: ʔ
+
+# 韵母 → 比较用 IPA（原表：i=i, ie=e, a=a, o=o, uo=ɔ, u=u, ur=ṵ, e=ɯ, y=ɹ̍, yr=ɹ̰̍）
+finals:
+  i: i
+  ie: e
+  a: a
+  o: o
+  uo: ɔ
+  u: u
+  ur: u
+  e: ɯ
+  y: ɨ
+  yr: ɨ
+
+# 声调字母（词尾）→ 调值（上标数字）
+tones:
+  t: "⁵⁵"
+  x: "³⁴"
+  p: "²¹"
+  "": "³³"

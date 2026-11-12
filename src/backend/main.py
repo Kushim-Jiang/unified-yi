@@ -32,6 +32,13 @@ FONT_DIR = BASE_DIR / "font"
 loader = DataLoader(BASE_DIR)
 alignment_mgr = AlignmentManager(loader)
 
+
+def _char_ipa(char: dict) -> str:
+    """发音比较用的 IPA：彝语拼音来源用转换结果（可能为空），其余用原值。"""
+    if "pronunciation_ipa" in char:
+        return char["pronunciation_ipa"]
+    return char.get("pronunciation", "")
+
 # ─── 应用初始化 ────────────────────────────────────────────────
 app = FastAPI(title="Unified Yi Character Manager", version="1.2.0")
 app.include_router(ocr_router)
@@ -459,7 +466,7 @@ def suggest_alignments(
         return {"target": {**target_char, "source": source}, "suggestions": []}
 
     if method == "pronunciation":
-        suggestions = find_similar_by_pronunciation(target_char["pronunciation"], candidates, top_k=top_k)
+        suggestions = find_similar_by_pronunciation(_char_ipa(target_char), candidates, top_k=top_k)
     elif method == "meaning":
         suggestions = find_similar_by_meaning(target_char["meaning"], candidates, top_k=top_k)
     elif method == "radical":
@@ -483,8 +490,8 @@ def _combined_three_way(target_char: dict, candidates: list[dict], source: str, 
         cand_mean = cand.get("meaning", "")
         t_lat = extract_pinyin(target_char.get("meaning", ""))
         c_lat = extract_pinyin(cand_mean)
-        ipa_t = target_char.get("pronunciation", "")
-        ipa_c = cand.get("pronunciation", "")
+        ipa_t = _char_ipa(target_char)
+        ipa_c = _char_ipa(cand)
 
         if t_lat and c_lat:
             pron_sim = pinyin_similarity(t_lat, c_lat)
@@ -591,8 +598,8 @@ def _similarity_between_chars(char_a: dict, source_a: str, char_b: dict, source_
     lat_py_a = extract_pinyin(char_a.get("meaning", ""))
     lat_py_b = extract_pinyin(char_b.get("meaning", ""))
     # IPA 注音作为后备
-    ipa_a = char_a.get("pronunciation", "")
-    ipa_b = char_b.get("pronunciation", "")
+    ipa_a = _char_ipa(char_a)
+    ipa_b = _char_ipa(char_b)
 
     if lat_py_a and lat_py_b:
         # 优先：释义拉丁拼音模糊匹配
@@ -803,7 +810,7 @@ def compare_two(source_a: str, src_ref_a: str, source_b: str, src_ref_b: str):
     if char_a is None or char_b is None:
         raise HTTPException(status_code=404, detail="Character not found")
 
-    pron_dist = syllable_distance(char_a["pronunciation"], char_b["pronunciation"])
+    pron_dist = syllable_distance(_char_ipa(char_a), _char_ipa(char_b))
     mean_sim = meaning_similarity(char_a["meaning"], char_b["meaning"])
     rs_a = loader.get_char_rs(source_a, char_a["glyph"])
     rs_b = loader.get_char_rs(source_b, char_b["glyph"])

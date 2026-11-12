@@ -127,6 +127,15 @@ CONSONANT_FEATURES = {
     "dʐʰ": {"place": 5, "manner": "affricate", "voicing": 1, "nasal": 0, "aspirated": 1},
     # 常见变体 alias
     "g": {"place": 7, "manner": "plosive", "voicing": 1, "nasal": 0},
+    # 鼻冠浊音（彝语拼音 nb/nd/nz/nr/nj/mg）
+    "ᵐb": {"place": 0, "manner": "plosive", "voicing": 1, "nasal": 0.5},
+    "ⁿd": {"place": 3, "manner": "plosive", "voicing": 1, "nasal": 0.5},
+    "ⁿdz": {"place": 3, "manner": "affricate", "voicing": 1, "nasal": 0.5},
+    "ᶯɖʐ": {"place": 5, "manner": "affricate", "voicing": 1, "nasal": 0.5},
+    "ᶮdʑ": {"place": 11, "manner": "affricate", "voicing": 1, "nasal": 0.5},
+    "ᵑɡ": {"place": 7, "manner": "plosive", "voicing": 1, "nasal": 0.5},
+    # 卷舌塞擦音（彝语拼音 rr）
+    "ɖʐ": {"place": 5, "manner": "affricate", "voicing": 1, "nasal": 0},
 }
 
 CONSONANT_ALIASES = {
@@ -146,6 +155,13 @@ CONSONANT_ALIASES = {
     "tʃʰ": "tʃʰ",
     "dʒ": "dʒ",
     "dʒʰ": "dʒʰ",
+    "ᵐb": "ᵐb",
+    "ⁿd": "ⁿd",
+    "ⁿdz": "ⁿdz",
+    "ᶯɖʐ": "ᶯɖʐ",
+    "ᶮdʑ": "ᶮdʑ",
+    "ᵑɡ": "ᵑɡ",
+    "ɖʐ": "ɖʐ",
 }
 
 CONSONANT_NAMES = {
@@ -400,7 +416,10 @@ def find_similar_by_pronunciation(
 ) -> list[dict]:
     results = []
     for cand in candidates:
-        cand_pron = cand.get("pronunciation") or cand.get("pron", "")
+        if "pronunciation_ipa" in cand:
+            cand_pron = cand["pronunciation_ipa"]
+        else:
+            cand_pron = cand.get("pronunciation") or cand.get("pron", "")
         dist_info = syllable_distance(target_pron, cand_pron)
         if dist_info["combined_distance"] <= max_distance:
             results.append({**cand, "distance": dist_info["combined_distance"], "distance_detail": dist_info})

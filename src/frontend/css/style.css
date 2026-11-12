@@ -5,6 +5,18 @@
   src: url("/font/yi.ttf") format("truetype");
 }
 
+/* 回退字体：U3《通用规范彝文常用字字典》有 797 个字不在 yi.ttf 里，
+   这里按字符自动回退（tyht.ttf 覆盖 795 个，tyht-extra.ttf 是另外 2 个的子集）。 */
+@font-face {
+  font-family: "YiFontAlt";
+  src: url("/font/tyht.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "YiFontAltExtra";
+  src: url("/font/tyht-extra.ttf") format("truetype");
+}
+
 :root {
   --bg: #f5f0e8;
   --surface: #fffef9;
@@ -76,7 +88,9 @@ textarea {
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", "Noto Sans SC", sans-serif;
+  /* 释义/备注里会夹带彝文字符，把彝文字体放在字体栈末尾做兜底 */
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", "Noto Sans SC", sans-serif,
+    "YiFont", "YiFontAlt", "YiFontAltExtra";
   font-size: var(--font-size);
   color: var(--text);
   background: var(--bg);
@@ -102,7 +116,7 @@ body {
   flex-shrink: 0;
 }
 .header h1 .yi-demo {
-  font-family: "YiFont";
+  font-family: "YiFont", "YiFontAlt", "YiFontAltExtra";
   margin-left: 8px;
   font-size: 22px;
 }
@@ -315,7 +329,7 @@ body {
   background: var(--aligned-bg);
 }
 .char-table .glyph-cell {
-  font-family: "YiFont";
+  font-family: "YiFont", "YiFontAlt", "YiFontAltExtra";
   font-size: 28px;
   text-align: center;
   line-height: 1.2;
@@ -379,7 +393,7 @@ body {
   justify-content: space-between;
 }
 .align-panel .glyph-display {
-  font-family: "YiFont";
+  font-family: "YiFont", "YiFontAlt", "YiFontAltExtra";
   font-size: 64px;
   text-align: center;
   padding: 20px;
@@ -505,7 +519,7 @@ html,
   background: var(--accent-bg);
 }
 .suggestion-item .sugg-glyph {
-  font-family: "YiFont";
+  font-family: "YiFont", "YiFontAlt", "YiFontAltExtra";
   font-size: 32px;
   min-width: 48px;
   text-align: center;
@@ -557,7 +571,7 @@ html,
   margin-bottom: 8px;
 }
 .align-link-item .link-glyph {
-  font-family: "YiFont";
+  font-family: "YiFont", "YiFontAlt", "YiFontAltExtra";
   font-size: 24px;
 }
 .align-link-item .link-arrow {
@@ -725,7 +739,7 @@ table.groups-table thead > tr > th {
   vertical-align: top;
 }
 .groups-table .group-glyph {
-  font-family: "YiFont" !important;
+  font-family: "YiFont", "YiFontAlt", "YiFontAltExtra" !important;
   font-size: 30px;
   line-height: 1.2;
   text-align: center;

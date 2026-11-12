@@ -9,6 +9,8 @@ from pathlib import Path
 
 import yaml
 
+from services.yi_pinyin import to_ipa as yi_pinyin_to_ipa
+
 
 class DataLoader:
     """统一的数据加载器，管理所有数据文件的读取和缓存。"""
@@ -34,6 +36,10 @@ class DataLoader:
         "d5": {"name": "彝汉字典 楚雄本 (1995)", "region": "云南", "year": 1995, "group": "yunnan"},
         "d6": {"name": "古彝文常用字典 (2014)", "region": "云南", "year": 2014, "group": "yunnan"},
         "u2": {"name": "通用彝文规范方案试行通知 (2011)", "region": "通用", "year": 2011, "group": "unified"},
+        "u3": {"name": "通用规范彝文常用字字典", "region": "通用", "year": None, "group": "unified", "phonetic": "yi_pinyin"},
+        "q1": {"name": "简明彝文字典 贵州本 (1991)", "region": "贵州", "year": 1991, "group": "guizhou"},
+        "q2": {"name": "彝文字释", "region": "贵州", "year": None, "group": "guizhou"},
+        "q3": {"name": "彝文字典", "region": "贵州", "year": None, "group": "guizhou"},
     }
 
     # ── 缓存 ──────────────────────────────────────────────────
@@ -98,6 +104,7 @@ class DataLoader:
                         "src_ref": parts[1],
                         "pronunciation": parts[2] if len(parts) > 2 else "",
                         "meaning": parts[3] if len(parts) > 3 else "",
+                        "note": parts[4] if len(parts) > 4 else "",
                     }
                 )
         rs_data = self._load_rs_file(filename)
@@ -106,7 +113,16 @@ class DataLoader:
             if rs:
                 char["radical"] = rs["radical"]
                 char["other_stroke"] = rs["other_stroke"]
+        if self.phonetic_of(filename) == "yi_pinyin":
+            for char in data:
+                # 原表是彝语拼音，比较发音前转成 IPA（转不出来时留空，不做比较）
+                char["pronunciation_ipa"] = yi_pinyin_to_ipa(char["pronunciation"])
         return data
+
+    @classmethod
+    def phonetic_of(cls, source: str) -> str:
+        """来源的注音体系：'ipa'（默认）或 'yi_pinyin'。"""
+        return cls.SOURCE_META.get(source, {}).get("phonetic", "ipa")
 
     def load_yaml(self, filename: str) -> dict:
         """加载 YAML 文件（优先 map/，后备 rs/）。"""
