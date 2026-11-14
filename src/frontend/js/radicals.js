@@ -152,6 +152,7 @@ class RadicalApp {
     if (!this.currentSource) {
       this.charGrid.innerHTML = '<div class="loading" style="grid-column:1/-1;"><span class="spinner"></span> 请选择来源</div>';
       this.paletteGrid.innerHTML = "";
+      document.documentElement.style.removeProperty("--glyph-font");
       return;
     }
 
@@ -162,6 +163,8 @@ class RadicalApp {
 
       this.allData = rsRes.data || [];
       this.radicalList = orderRes.radicals || rsRes.radicals || [];
+      this.sourceFont = rsRes.font || "yi";
+      document.documentElement.style.setProperty("--glyph-font", glyphFont(this.sourceFont));
 
       this._renderGrid();
       this._renderPalette();
@@ -336,7 +339,7 @@ class RadicalApp {
     let html = "";
     for (let j = 0; j < rads.length; j++) {
       html += `<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;padding:4px 6px;background:var(--bg);border-radius:4px;">`;
-      html += `<span style="font-family:\'YiFont\',\'YiFontAlt\',\'YiFontAltExtra\';font-size:18px;">${htmlEscape(rads[j])}</span>`;
+      html += `<span style="font-family:${glyphFont(this.sourceFont)};font-size:18px;">${htmlEscape(rads[j])}</span>`;
       html += `<input type="number" class="stroke-edit" data-idx="${j}" value="${strokes[j] || 0}"
                          min="0" max="30" style="width:50px;padding:2px 4px;border:1px solid var(--border);border-radius:3px;font-size:12px;text-align:center;">`;
       html += `<span style="font-size:11px;color:var(--text-secondary);">画</span>`;

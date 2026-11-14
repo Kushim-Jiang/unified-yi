@@ -57,4 +57,20 @@ python utils/merge_d1d6.py <D1-D6_彝汉字典_整理.xlsx>
   `SOURCE_META` 里给这些来源标 `"font": "yihead"`，前端 `glyphFont()`（[`src/frontend/js/ui.js`](src/frontend/js/ui.js)）
   据此只在该来源的字形上改用 `YiFontHead`，不进通用字体栈。
 
+#### 字体的区分与使用范围
+
+| 字体 | `SOURCE_META` 的 `font` | 用在哪些来源 | 怎么选中的 |
+| --- | --- | --- | --- |
+| `font/yi.ttf` | `yi` | u0–u3、q0–q3、d0、d7、d8 | 通用字体栈的第一位 |
+| `font/tyht.ttf` + `tyht-extra.ttf` | `yi` | 同上，仅当 `yi.ttf` 缺字时逐字回退 | 同一个栈的后两位，由浏览器按字符回退 |
+| `font/YiHeadwords-D1D6.otf` | `yihead` | d1–d6 | `glyphFont()` 给这些字形单独指定 |
+
+- 只有 `yihead` / `yi` 这一层是「按来源」显式区分的；`yi.ttf` 与 `tyht*.ttf` 之间是逐字回退，
+  前端拿不到「这个字最终由哪个文件渲染」，所以来源卡片上统一标成 `yi.ttf (+tyht)`。
+- 所有会画字形的界面都走 `glyphFont()`：浏览表、字符详情、相似建议、对齐取字/当前组/关联组、
+  分组表、录入表；部首标注页按来源整页设置 `--glyph-font`（`/api/radical-data/{source}` 返回 `font`），
+  但右边的部首列表来自全局 `rs/rs_order.yaml`，始终用通用字体栈。
+- 来源卡片和字符详情会显示「Font: …」，方便核对某个来源用的是哪套字体。
+  改完 `style.css` / `ui.js` 后要强制刷新，否则浏览器会用缓存的旧样式或脚本。
+
 ### Todo

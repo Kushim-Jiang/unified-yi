@@ -44,7 +44,7 @@
         }
 
         .rs-card .glyph {
-            font-family: "YiFont", "YiFontAlt", "YiFontAltExtra";
+            font-family: var(--glyph-font, "YiFont", "YiFontAlt", "YiFontAltExtra");
             font-size: 28px;
             line-height: 1.2;
             display: block;
@@ -58,7 +58,7 @@
 
         .rs-card .radical-badge {
             display: inline-block;
-            font-family: "YiFont", "YiFontAlt", "YiFontAltExtra";
+            font-family: var(--glyph-font, "YiFont", "YiFontAlt", "YiFontAltExtra");
             font-size: 16px;
             background: var(--accent-bg);
             border: 1px solid var(--border);
@@ -151,6 +151,7 @@
         }
 
         .rs-palette-item {
+            /* 部首列表来自全局 rs_order.yaml（u0 码位），与当前来源字体无关 */
             font-family: "YiFont", "YiFontAlt", "YiFontAltExtra";
             font-size: 20px;
             text-align: center;
@@ -184,7 +185,7 @@
         }
 
         .rs-detail .sel-glyph {
-            font-family: "YiFont", "YiFontAlt", "YiFontAltExtra";
+            font-family: var(--glyph-font, "YiFont", "YiFontAlt", "YiFontAltExtra");
             font-size: 36px;
             display: block;
         }

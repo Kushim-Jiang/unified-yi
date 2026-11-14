@@ -137,6 +137,16 @@ function glyphFont(font) {
     : "'YiFont','YiFontAlt','YiFontAltExtra'";
 }
 
+/**
+ * 字形字体的可读名称，用于在界面上标注某个字头用的是哪套字体。
+ * 'yi' 实际是 yi.ttf 为主、tyht.ttf/tyht-extra.ttf 逐字回退的三级字体栈。
+ * @param {string} [font] - 后端 char.font / source.font，'yihead' 或 'yi'
+ * @returns {string}
+ */
+function glyphFontLabel(font) {
+  return font === "yihead" ? "YiHeadwords-D1D6" : "yi.ttf (+tyht)";
+}
+
 // ─── 分数颜色 ───────────────────────────────────────────────
 
 /**

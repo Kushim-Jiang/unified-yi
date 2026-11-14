@@ -373,6 +373,7 @@ def list_radical_data(source: str):
 
         return {
             "source": source,
+            "font": loader.font_of(source),
             "total": len(result),
             "radicals": list(radical_index.keys()),
             "data": result,

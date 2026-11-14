@@ -748,7 +748,8 @@ table.groups-table thead > tr > th {
   vertical-align: top;
 }
 .groups-table .group-glyph {
-  font-family: "YiFont", "YiFontAlt", "YiFontAltExtra" !important;
+  /* 不要加 !important：字形要用行内 glyphFont() 指定的来源字体（d1–d6 是 YiFontHead） */
+  font-family: "YiFont", "YiFontAlt", "YiFontAltExtra";
   font-size: 30px;
   line-height: 1.2;
   text-align: center;
