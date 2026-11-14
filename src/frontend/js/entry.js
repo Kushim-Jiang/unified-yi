@@ -227,7 +227,7 @@ class EntryGrid {
       html += `<td class="col-idx">${rowIdx + 1}</td>`;
       // Col 2: glyph + ref
       html += `<td>
-                <div class="col-glyph">${htmlEscape(glyph)}</div>
+                <div class="col-glyph" style="font-family:${glyphFont(item.font)}">${htmlEscape(glyph)}</div>
                 <div class="col-ref">${htmlEscape(ref)}</div>
             </td>`;
       // Col 3: pronunciation (editable)

@@ -160,7 +160,7 @@ class BrowseApp {
         const cls = selected ? "selected" : aligned ? "aligned" : "";
         return `<tr class="${cls}"
                 onclick="app.selectCharacter('${htmlEscape(c.src_ref)}', '${this.state.currentSource}')">
-                <td class="glyph-cell" title="${htmlEscape(c.glyph)}">${c.glyph}</td>
+                <td class="glyph-cell" style="font-family:${glyphFont(c.font)}" title="${htmlEscape(c.glyph)}">${c.glyph}</td>
                 <td class="src-ref">${htmlEscape(c.src_ref)}${aligned ? " 🔗" : ""}</td>
                 <td class="pronunciation">${htmlEscape(c.pronunciation)}</td>
                 <td>${htmlEscape(c.meaning)}</td>
@@ -218,7 +218,7 @@ class BrowseApp {
 
     detail.innerHTML = `
             <div style="display:flex;align-items:center;gap:16px;padding:16px;background:var(--accent-bg);border-radius:var(--radius);margin-bottom:12px;">
-                <span style="font-family:'YiFont','YiFontAlt','YiFontAltExtra';font-size:48px;">${char.glyph}</span>
+                <span style="font-family:${glyphFont(char.font)};font-size:48px;">${char.glyph}</span>
                 <div>
                     <div style="font-weight:700;font-size:18px;">${htmlEscape(char.src_ref)}</div>
                     <div style="font-family:'Gentium Plus',serif;color:var(--info);">${htmlEscape(char.pronunciation)}</div>
@@ -271,7 +271,7 @@ class BrowseApp {
           const pct = (rawScore * 100).toFixed(0);
           return `
             <div class="suggestion-item">
-              <span class="sugg-glyph">${s.glyph}</span>
+              <span class="sugg-glyph" style="font-family:${glyphFont(s.font)};">${s.glyph}</span>
               <div class="sugg-info">
                 <div><strong>${htmlEscape(s.source)}</strong> · ${htmlEscape(s.src_ref)}</div>
                 <div style="font-family:'Gentium Plus',serif;font-size:11px;color:var(--info);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">/${htmlEscape(s.pronunciation)}/</div>

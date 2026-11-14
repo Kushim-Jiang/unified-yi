@@ -115,7 +115,7 @@ class AlignmentApp {
           const inGroup = currentKeys.has(key);
           const aligned = this.st.alignedKeys.has(key);
           return `<tr class="${inGroup ? "selected" : ""}${aligned ? " aligned" : ""}" data-ref="${htmlEscape(c.src_ref)}" onclick="${inGroup ? "" : "app.pickChar('" + htmlEscape(c.src_ref) + "')"}"${aligned ? ' title="点击加载该组"' : ""}>
-                    <td class="glyph-cell">${c.glyph}</td>
+                    <td class="glyph-cell" style="font-family:${glyphFont(c.font)}">${c.glyph}</td>
                     <td class="src-ref">${htmlEscape(c.src_ref)}</td>
                     <td style="font-size:10px;color:var(--info);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">/${htmlEscape(c.pronunciation || "")}/</td>
                     <td style="font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px;">${htmlEscape((c.meaning || "").slice(0, 20))}</td>
@@ -289,7 +289,7 @@ class AlignmentApp {
               .map((e, i) => {
                 const c = e.char || {};
                 return `<div style="display:flex;align-items:center;gap:6px;padding:3px 8px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);">
-                    <span style="font-family:'YiFont','YiFontAlt','YiFontAltExtra';font-size:22px;">${c.glyph || "?"}</span>
+                    <span style="font-family:${glyphFont(c.font)};font-size:22px;">${c.glyph || "?"}</span>
                     <div style="line-height:1.3;">
                         <div style="font-size:12px;"><strong>${htmlEscape(e.source)}</strong> · ${htmlEscape(e.src_ref)}</div>
                         <div style="font-family:'Gentium Plus',serif;font-size:11px;color:var(--info);">/${htmlEscape(c.pronunciation || "")}/</div>
@@ -417,7 +417,7 @@ class AlignmentApp {
                         const disabled = inGroup || aligned;
                         return `<div style="display:flex;align-items:center;gap:5px;padding:3px 6px;margin-bottom:3px;border-radius:4px;${disabled ? "" : "cursor:pointer;"}background:var(--surface);"
                                     ${disabled ? "" : "onclick=\"app.addSearchResultToGroup('" + src + "','" + htmlEscape(item.src_ref) + "')\""}>
-                            <span style="font-family:'YiFont','YiFontAlt','YiFontAltExtra';font-size:18px;flex-shrink:0;">${item.glyph}</span>
+                            <span style="font-family:${glyphFont(item.font)};font-size:18px;flex-shrink:0;">${item.glyph}</span>
                             <div style="flex:1;min-width:0;">
                                 <div style="display:flex;align-items:baseline;gap:4px;">
                                     <span style="font-size:10px;color:var(--info);white-space:nowrap;">/${htmlEscape(item.pronunciation)}/</span>
@@ -439,7 +439,7 @@ class AlignmentApp {
                     (item) => `
                     <div style="display:flex;align-items:center;gap:5px;padding:3px 6px;margin-bottom:3px;border-radius:4px;cursor:pointer;background:var(--surface);"
                          onclick="app.addSuggestionToGroup('${src}','${htmlEscape(item.src_ref)}')">
-                        <span style="font-family:'YiFont','YiFontAlt','YiFontAltExtra';font-size:18px;flex-shrink:0;">${item.glyph}</span>
+                        <span style="font-family:${glyphFont(item.font)};font-size:18px;flex-shrink:0;">${item.glyph}</span>
                         <div style="flex:1;min-width:0;">
                             <div style="display:flex;align-items:baseline;gap:4px;">
                                 <span style="font-size:10px;color:var(--info);white-space:nowrap;">/${htmlEscape(item.pronunciation)}/</span>
@@ -488,8 +488,8 @@ class AlignmentApp {
           return `<div style="display:flex;align-items:center;gap:6px;padding:5px 8px;margin-bottom:3px;border-radius:4px;cursor:pointer;background:var(--surface);"
                             onclick="app.addGroupToCurrent(${gs.group_id})">
                         <div style="display:flex;align-items:center;gap:2px;flex-shrink:0;">
-                            <span style="font-family:'YiFont','YiFontAlt','YiFontAltExtra';font-size:22px;line-height:1.1;">${htmlEscape(p0.glyph || "?")}</span>
-                            <span style="font-family:'YiFont','YiFontAlt','YiFontAltExtra';font-size:22px;line-height:1.1;">${htmlEscape(p1.glyph || "?")}</span>
+                            <span style="font-family:${glyphFont(p0.font)};font-size:22px;line-height:1.1;">${htmlEscape(p0.glyph || "?")}</span>
+                            <span style="font-family:${glyphFont(p1.font)};font-size:22px;line-height:1.1;">${htmlEscape(p1.glyph || "?")}</span>
                         </div>
                         <div style="flex:1;min-width:0;font-size:11px;">
                             <div style="font-weight:700;">G${String(gs.group_id).padStart(5, "0")}</div>

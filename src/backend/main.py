@@ -74,6 +74,7 @@ def list_sources():
                 "region": meta["region"],
                 "year": meta["year"],
                 "group": meta["group"],
+                "font": loader.font_of(key),
                 "character_count": len(data[key]),
             }
         )

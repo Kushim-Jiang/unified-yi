@@ -17,6 +17,15 @@
   src: url("/font/tyht-extra.ttf") format("truetype");
 }
 
+/* 《彝汉字典》D1–D6 整理包的字头字体。这批码位（U+E000、U+F0000 等）在 yi.ttf
+   里是别的字，所以不能进通用字体栈，只在 d1–d6 来源的字形上单独指定
+   （见 ui.js glyphFont）。 */
+@font-face {
+  font-family: "YiFontHead";
+  src: url("/font/YiHeadwords-D1D6.otf") format("opentype");
+  font-display: swap;
+}
+
 :root {
   --bg: #f5f0e8;
   --surface: #fffef9;

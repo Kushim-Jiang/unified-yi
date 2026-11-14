@@ -24,22 +24,26 @@ class DataLoader:
     CURRENT_GROUP_FILE: Path
 
     # ── 来源元信息 ────────────────────────────────────────────
+    # d1–d6 出自《彝汉字典》D1–D6 整理包，字头用 YiHeadwords-D1D6 字体
+    # （font="yihead"），其余来源用 font/yi.ttf。详见 utils/merge_d1d6.py。
     SOURCE_META: dict[str, dict] = {
         "u0": {"name": "通用彝文字典 (2016)", "region": "通用", "year": 2016, "group": "unified"},
         "u1": {"name": "滇川黔桂彝文字典 (2001)", "region": "通用", "year": 2001, "group": "unified"},
-        "q0": {"name": "简明彝汉字典 贵州本 (2018)", "region": "贵州", "year": 2018, "group": "guizhou"},
-        "d0": {"name": "云南省规范彝文彝汉词典 (2014)", "region": "云南", "year": 2014, "group": "yunnan"},
-        "d1": {"name": "云南规范彝文字汇本 (1991+)", "region": "云南", "year": 1991, "group": "yunnan"},
-        "d2": {"name": "云南省十四种民族文字方案集合", "region": "云南", "year": None, "group": "yunnan"},
-        "d3": {"name": "滇南彝文字典 (2005)", "region": "云南", "year": 2005, "group": "yunnan"},
-        "d4": {"name": "彝汉简明词典 (1984)", "region": "云南", "year": 1984, "group": "yunnan"},
-        "d5": {"name": "彝汉字典 楚雄本 (1995)", "region": "云南", "year": 1995, "group": "yunnan"},
-        "d6": {"name": "古彝文常用字典 (2014)", "region": "云南", "year": 2014, "group": "yunnan"},
+        "q0": {"name": "简明彝汉字典 贵州本 增订版 (2018)", "region": "贵州", "year": 2018, "group": "guizhou"},
+        "q1": {"name": "简明彝汉字典 贵州本 (1991)", "region": "贵州", "year": 1991, "group": "guizhou"},
+        "q2": {"name": "彝文字释 (2009)", "region": "贵州", "year": 2009, "group": "guizhou"},
+        "q3": {"name": "彝文字典 (1978)", "region": "贵州", "year": 1978, "group": "guizhou"},
+        "d0": {"name": "云南规范彝文彝汉词典 (2014)", "region": "云南", "year": 2014, "group": "yunnan"},
+        "d1": {"name": "彝汉字典 楚雄本 (1995)", "region": "云南", "year": 1995, "group": "yunnan", "font": "yihead"},
+        "d2": {"name": "彝汉简明词典 (1984)", "region": "云南", "year": 1984, "group": "yunnan", "font": "yihead"},
+        "d3": {"name": "汉彝词典 楚雄本 (2006)", "region": "云南", "year": 2006, "group": "yunnan", "font": "yihead"},
+        "d4": {"name": "滇南彝文字典 (2005)", "region": "云南", "year": 2005, "group": "yunnan", "font": "yihead"},
+        "d5": {"name": "古彝文常用字典 (2014)", "region": "云南", "year": 2014, "group": "yunnan", "font": "yihead"},
+        "d6": {"name": "简明彝汉字典 禄劝版 (2014)", "region": "云南", "year": 2014, "group": "yunnan", "font": "yihead"},
+        "d7": {"name": "云南规范彝文字汇本 (1991+)", "region": "云南", "year": 1991, "group": "yunnan"},
+        "d8": {"name": "云南省十四种民族文字方案集合", "region": "云南", "year": None, "group": "yunnan"},
         "u2": {"name": "通用彝文规范方案试行通知 (2011)", "region": "通用", "year": 2011, "group": "unified"},
         "u3": {"name": "通用规范彝文常用字字典", "region": "通用", "year": None, "group": "unified", "phonetic": "yi_pinyin"},
-        "q1": {"name": "简明彝文字典 贵州本 (1991)", "region": "贵州", "year": 1991, "group": "guizhou"},
-        "q2": {"name": "彝文字释", "region": "贵州", "year": None, "group": "guizhou"},
-        "q3": {"name": "彝文字典", "region": "贵州", "year": None, "group": "guizhou"},
     }
 
     # ── 缓存 ──────────────────────────────────────────────────
@@ -108,7 +112,9 @@ class DataLoader:
                     }
                 )
         rs_data = self._load_rs_file(filename)
+        font = self.font_of(filename)
         for char in data:
+            char["font"] = font
             rs = rs_data.get(char["glyph"])
             if rs:
                 char["radical"] = rs["radical"]
@@ -123,6 +129,11 @@ class DataLoader:
     def phonetic_of(cls, source: str) -> str:
         """来源的注音体系：'ipa'（默认）或 'yi_pinyin'。"""
         return cls.SOURCE_META.get(source, {}).get("phonetic", "ipa")
+
+    @classmethod
+    def font_of(cls, source: str) -> str:
+        """来源的字头字体：'yihead'（YiHeadwords-D1D6）或 'yi'（font/yi.ttf）。"""
+        return cls.SOURCE_META.get(source, {}).get("font", "yi")
 
     def load_yaml(self, filename: str) -> dict:
         """加载 YAML 文件（优先 map/，后备 rs/）。"""

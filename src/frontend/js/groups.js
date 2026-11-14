@@ -200,7 +200,7 @@ class GroupsApp {
               .map((e) => {
                 const c = e.char || {};
                 return `<div class="group-cell-item">
-                        <span class="group-glyph">${htmlEscape(c.glyph || "?")}</span>
+                        <span class="group-glyph" style="font-family:${glyphFont(c.font)}">${htmlEscape(c.glyph || "?")}</span>
                         <span class="group-ref">${htmlEscape(e.src_ref)}</span>
                     </div>`;
               })

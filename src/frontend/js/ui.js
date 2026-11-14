@@ -122,6 +122,21 @@ function htmlEscape(s) {
   return d.innerHTML;
 }
 
+// ─── 字形字体 ───────────────────────────────────────────────
+
+/**
+ * Return the CSS font-family for a glyph, based on the source's headword font.
+ * `font === "yihead"` 的是《彝汉字典》D1–D6 整理包来头，码位与 yi.ttf 冲突，
+ * 只能单独用 YiFontHead 渲染（见 style.css 的 @font-face）。
+ * @param {string} [font] - 后端 char.font / source.font，'yihead' 或 'yi'
+ * @returns {string}
+ */
+function glyphFont(font) {
+  return font === "yihead"
+    ? "'YiFontHead'"
+    : "'YiFont','YiFontAlt','YiFontAltExtra'";
+}
+
 // ─── 分数颜色 ───────────────────────────────────────────────
 
 /**
