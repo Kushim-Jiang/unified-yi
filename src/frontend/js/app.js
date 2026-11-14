@@ -275,7 +275,7 @@ class BrowseApp {
               <span class="sugg-glyph" style="font-family:${glyphFont(s.font)};">${s.glyph}</span>
               <div class="sugg-info">
                 <div><strong>${htmlEscape(s.source)}</strong> · ${htmlEscape(s.src_ref)}</div>
-                <div style="font-family:'Gentium Plus',serif;font-size:11px;color:var(--info);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">/${htmlEscape(s.pronunciation)}/</div>
+                <div style="font-family:'Gentium Plus',serif;font-size:11px;color:var(--info);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${pronDisplay(s)}</div>
                 <div style="font-size:11px;word-break:break-word;">${htmlEscape(s.meaning)}</div>
               </div>
               <div class="sugg-col-score" style="min-width:48px;">${pct}%<div class="score-bar"><div class="fill ${scoreColor(rawScore)}" style="width:${pct}%"></div></div></div>

@@ -12,6 +12,7 @@ class RadicalApp {
     this.currentSource = null;
     this.allData = []; // all characters from current source
     this.radicalList = []; // ordered radical glyphs
+    this.sourceRadicals = []; // 来源自带、不在全局 rs_order.yaml 里的部首字形
     this.selectedGlyph = null; // currently selected character glyph
     this.currentPage = 1;
 
@@ -163,6 +164,7 @@ class RadicalApp {
 
       this.allData = rsRes.data || [];
       this.radicalList = orderRes.radicals || rsRes.radicals || [];
+      this.sourceRadicals = rsRes.source_radicals || [];
       this.sourceFont = rsRes.font || "yi";
       document.documentElement.style.setProperty("--glyph-font", glyphFont(this.sourceFont));
 
@@ -219,7 +221,8 @@ class RadicalApp {
       if (hasRs && rads.length > 0) {
         for (let j = 0; j < rads.length; j++) {
           html += `<span class="radical-badge">${htmlEscape(rads[j])}</span>`;
-          if (strokes[j] !== undefined) {
+          // 没录笔画数（如 u4 的原表只有部首）时不显示「0画」
+          if (strokes[j]) {
             html += `<span class="stroke-num">${strokes[j]}画</span>`;
           }
         }
@@ -254,7 +257,7 @@ class RadicalApp {
   }
 
   _renderPalette() {
-    if (!this.radicalList || this.radicalList.length === 0) {
+    if ((!this.radicalList || this.radicalList.length === 0) && (!this.sourceRadicals || this.sourceRadicals.length === 0)) {
       this.paletteGrid.innerHTML = '<div style="grid-column:1/-1;padding:20px;text-align:center;color:var(--text-secondary);">暂无部首数据</div>';
       return;
     }
@@ -262,10 +265,18 @@ class RadicalApp {
     const assignedRads = this._getAssignedRadicals();
 
     let html = "";
-    for (const rad of this.radicalList) {
+    for (const rad of this.radicalList || []) {
       if (!rad || rad === "0") continue;
       const isActive = assignedRads.includes(rad);
       html += `<div class="rs-palette-item${isActive ? " active" : ""}"
+                         onclick="rsApp.toggleRadical('${htmlEscape(rad)}')"
+                         title="${isActive ? "点击移除部首" : "点击添加部首"}">${htmlEscape(rad)}</div>`;
+    }
+    // 来源自带的部首字形（如 u4 的 37 个 PUA 部首），用该来源的字体渲染
+    for (const rad of this.sourceRadicals || []) {
+      const isActive = assignedRads.includes(rad);
+      html += `<div class="rs-palette-item${isActive ? " active" : ""}"
+                         style="font-family:${glyphFont(this.sourceFont)}"
                          onclick="rsApp.toggleRadical('${htmlEscape(rad)}')"
                          title="${isActive ? "点击移除部首" : "点击添加部首"}">${htmlEscape(rad)}</div>`;
     }

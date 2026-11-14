@@ -34,7 +34,10 @@ alignment_mgr = AlignmentManager(loader)
 
 
 def _char_ipa(char: dict) -> str:
-    """发音比较用的 IPA：彝语拼音来源用转换结果（可能为空），其余用原值。"""
+    """发音比较用的 IPA：彝语拼音来源用转换结果（可能为空），其余用原值。
+    u4 的 pronunciation 是四省区读音的合录（带出处代号），不是单音节，不做发音比较。"""
+    if char.get("phonetic") == "comparative":
+        return ""
     if "pronunciation_ipa" in char:
         return char["pronunciation_ipa"]
     return char.get("pronunciation", "")
@@ -352,9 +355,10 @@ def list_radical_data(source: str):
                 stroke_str = rs["other_stroke"]
                 radicals = [r.strip() for r in rad_str.split(",") if r.strip()]
                 strokes = []
-                for s in stroke_str.split(","):
-                    s = s.strip()
-                    strokes.append(int(s) if s.isdigit() else 0)
+                if stroke_str:
+                    for s in stroke_str.split(","):
+                        s = s.strip()
+                        strokes.append(int(s) if s.isdigit() else 0)
             else:
                 radicals = []
                 strokes = []
@@ -371,11 +375,22 @@ def list_radical_data(source: str):
                 }
             )
 
+        # 本来源自己的部首里、全局 rs_order.yaml 没收录的那些（如 u4 的 37 个
+        # PUA 部首字形），单独列出来给前端补进部首面板
+        source_radicals = []
+        for item in result:
+            for rad in item["radicals"]:
+                if not rad or rad == "0":
+                    continue
+                if rad not in radical_index and rad not in source_radicals:
+                    source_radicals.append(rad)
+
         return {
             "source": source,
             "font": loader.font_of(source),
             "total": len(result),
             "radicals": list(radical_index.keys()),
+            "source_radicals": source_radicals,
             "data": result,
         }
     except HTTPException:
@@ -468,7 +483,11 @@ def suggest_alignments(
         return {"target": {**target_char, "source": source}, "suggestions": []}
 
     if method == "pronunciation":
-        suggestions = find_similar_by_pronunciation(_char_ipa(target_char), candidates, top_k=top_k)
+        target_ipa = _char_ipa(target_char)
+        # 没有可比较的 IPA 时不做发音匹配（否则空音节会跟任何候选都「距离 0」）
+        if target_ipa:
+            candidates = [c for c in candidates if _char_ipa(c)]
+        suggestions = find_similar_by_pronunciation(target_ipa, candidates, top_k=top_k) if target_ipa else []
     elif method == "meaning":
         suggestions = find_similar_by_meaning(target_char["meaning"], candidates, top_k=top_k)
     elif method == "radical":

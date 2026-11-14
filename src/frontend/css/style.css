@@ -26,6 +26,15 @@
   font-display: swap;
 }
 
+/* U4《论滇川黔桂彝族文字》第六章对比表的正体字和部首。码位 U+F6000–U+F6424
+   同样在 yi.ttf 里是别的字，所以也是单独一套，只在 u4 来源上指定
+   （见 ui.js glyphFont）。 */
+@font-face {
+  font-family: "YiFontHeadU4";
+  src: url("/font/YiHeadwords-U4.otf") format("opentype");
+  font-display: swap;
+}
+
 :root {
   --bg: #f5f0e8;
   --surface: #fffef9;

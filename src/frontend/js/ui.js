@@ -126,25 +126,40 @@ function htmlEscape(s) {
 
 /**
  * Return the CSS font-family for a glyph, based on the source's headword font.
- * `font === "yihead"` 的是《彝汉字典》D1–D6 整理包来头，码位与 yi.ttf 冲突，
- * 只能单独用 YiFontHead 渲染（见 style.css 的 @font-face）。
- * @param {string} [font] - 后端 char.font / source.font，'yihead' 或 'yi'
+ * `font === "yihead"` 的是《彝汉字典》D1–D6 整理包来头，`"yiheadu4"` 的是
+ * 《论滇川黔桂彝族文字》U4 对比表来头，两批码位都和 yi.ttf 冲突，只能各自单独渲染
+ * （见 style.css 的 @font-face）。
+ * @param {string} [font] - 后端 char.font / source.font，'yihead' / 'yiheadu4' / 'yi'
  * @returns {string}
  */
 function glyphFont(font) {
-  return font === "yihead"
-    ? "'YiFontHead'"
-    : "'YiFont','YiFontAlt','YiFontAltExtra'";
+  if (font === "yihead") return "'YiFontHead'";
+  if (font === "yiheadu4") return "'YiFontHeadU4'";
+  return "'YiFont','YiFontAlt','YiFontAltExtra'";
 }
 
 /**
  * 字形字体的可读名称，用于在界面上标注某个字头用的是哪套字体。
  * 'yi' 实际是 yi.ttf 为主、tyht.ttf/tyht-extra.ttf 逐字回退的三级字体栈。
- * @param {string} [font] - 后端 char.font / source.font，'yihead' 或 'yi'
+ * @param {string} [font] - 后端 char.font / source.font，'yihead' / 'yiheadu4' / 'yi'
  * @returns {string}
  */
 function glyphFontLabel(font) {
-  return font === "yihead" ? "YiHeadwords-D1D6" : "yi.ttf (+tyht)";
+  if (font === "yihead") return "YiHeadwords-D1D6";
+  if (font === "yiheadu4") return "YiHeadwords-U4";
+  return "yi.ttf (+tyht)";
+}
+
+/**
+ * 读音的显示文本。常规来源是单个音节/音标，用 /…/ 标出；
+ * `phonetic === "comparative"` 的来源（u4）读的是多省区读音合录，不加斜线。
+ * @param {{pronunciation?: string, phonetic?: string}} char
+ * @returns {string}
+ */
+function pronDisplay(char) {
+  const text = htmlEscape(char.pronunciation || "");
+  if (!text) return "";
+  return char.phonetic === "comparative" ? text : `/${text}/`;
 }
 
 // ─── 分数颜色 ───────────────────────────────────────────────

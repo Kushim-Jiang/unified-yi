@@ -25,7 +25,9 @@ class DataLoader:
 
     # ── 来源元信息 ────────────────────────────────────────────
     # d1–d6 出自《彝汉字典》D1–D6 整理包，字头用 YiHeadwords-D1D6 字体
-    # （font="yihead"），其余来源用 font/yi.ttf。详见 utils/merge_d1d6.py。
+    # （font="yihead"）；u4 出自《论滇川黔桂彝族文字》第六章对比表，字头和部首用
+    # YiHeadwords-U4（font="yiheadu4"）；其余来源用 font/yi.ttf。详见
+    # utils/merge_d1d6.py 和 utils/import_u4.py。
     SOURCE_META: dict[str, dict] = {
         "u0": {"name": "通用彝文字典 (2016)", "region": "通用", "year": 2016, "group": "unified"},
         "u1": {"name": "滇川黔桂彝文字典 (2001)", "region": "通用", "year": 2001, "group": "unified"},
@@ -44,6 +46,7 @@ class DataLoader:
         "d8": {"name": "云南省十四种民族文字方案集合", "region": "云南", "year": None, "group": "yunnan"},
         "u2": {"name": "通用彝文规范方案试行通知 (2011)", "region": "通用", "year": 2011, "group": "unified"},
         "u3": {"name": "通用规范彝文常用字字典", "region": "通用", "year": None, "group": "unified", "phonetic": "yi_pinyin"},
+        "u4": {"name": "论滇川黔桂彝族文字 第六章对比表 (1988)", "region": "通用", "year": 1988, "group": "unified", "font": "yiheadu4", "phonetic": "comparative"},
     }
 
     # ── 缓存 ──────────────────────────────────────────────────
@@ -113,13 +116,15 @@ class DataLoader:
                 )
         rs_data = self._load_rs_file(filename)
         font = self.font_of(filename)
+        phonetic = self.phonetic_of(filename)
         for char in data:
             char["font"] = font
+            char["phonetic"] = phonetic
             rs = rs_data.get(char["glyph"])
             if rs:
                 char["radical"] = rs["radical"]
                 char["other_stroke"] = rs["other_stroke"]
-        if self.phonetic_of(filename) == "yi_pinyin":
+        if phonetic == "yi_pinyin":
             for char in data:
                 # 原表是彝语拼音，比较发音前转成 IPA（转不出来时留空，不做比较）
                 char["pronunciation_ipa"] = yi_pinyin_to_ipa(char["pronunciation"])
@@ -127,12 +132,14 @@ class DataLoader:
 
     @classmethod
     def phonetic_of(cls, source: str) -> str:
-        """来源的注音体系：'ipa'（默认）或 'yi_pinyin'。"""
+        """来源的注音体系：'ipa'（默认）、'yi_pinyin'（彝语拼音，比较前转 IPA）
+        或 'comparative'（多省区读音合录，不做发音比较）。"""
         return cls.SOURCE_META.get(source, {}).get("phonetic", "ipa")
 
     @classmethod
     def font_of(cls, source: str) -> str:
-        """来源的字头字体：'yihead'（YiHeadwords-D1D6）或 'yi'（font/yi.ttf）。"""
+        """来源的字头字体：'yihead'（YiHeadwords-D1D6）、'yiheadu4'（YiHeadwords-U4）
+        或 'yi'（font/yi.ttf）。"""
         return cls.SOURCE_META.get(source, {}).get("font", "yi")
 
     def load_yaml(self, filename: str) -> dict:
@@ -147,7 +154,8 @@ class DataLoader:
 
     def load_rs_data(self, source: str) -> dict[str, dict]:
         """加载指定来源的部首-笔画数据。
-        笔画字段支持逗号分隔（多个部首用逗号隔开）。"""
+        笔画字段支持逗号分隔（多个部首用逗号隔开），也可以留空（只录了部首、
+        没录笔画数，如 u4）；部首和笔画都空的行视为没有标注。"""
         filepath = self.RS_DIR / f"{source}.tsv"
         if not filepath.exists():
             return {}
@@ -155,15 +163,16 @@ class DataLoader:
             lines = f.readlines()
         data = {}
         for line in lines[1:]:
-            line = line.strip()
-            if not line:
+            line = line.rstrip("\r\n")
+            if not line.strip():
                 continue
             parts = line.split("\t")
-            if len(parts) >= 3:
-                data[parts[0]] = {
-                    "radical": parts[1],
-                    "other_stroke": parts[2],  # may be comma-separated
-                }
+            if len(parts) >= 2 and parts[0].strip():
+                radical = parts[1].strip()
+                other_stroke = parts[2].strip() if len(parts) > 2 else ""
+                if not radical and not other_stroke:
+                    continue  # 空占位行，不算已标注
+                data[parts[0]] = {"radical": radical, "other_stroke": other_stroke}
         return data
 
     def get_char_rs(self, source: str, glyph: str) -> dict | None:
