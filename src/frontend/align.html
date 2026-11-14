@@ -6,6 +6,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Align — Unified Yi</title>
     <link rel="stylesheet" href="/css/style.css">
+    <style>
+        /* 选字面板是窄栏，压缩单元格留白，长读音靠省略号收起，不撑出横向滚动 */
+        .pick-table th,
+        .pick-table td {
+            padding: 4px 6px;
+        }
+        .pick-table td.src-ref {
+            white-space: nowrap;
+        }
+    </style>
 </head>
 
 <body>
@@ -44,10 +54,10 @@
 
             <!-- Source selector + search -->
             <div
-                style="flex:0 0 440px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px;box-shadow:var(--shadow);">
+                style="flex:0 1 440px;min-width:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px;box-shadow:var(--shadow);">
                 <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
                     <select id="pickSource"
-                        style="flex:1;padding:6px 8px;border:1px solid var(--border);border-radius:4px;"
+                        style="flex:1;min-width:0;padding:6px 8px;border:1px solid var(--border);border-radius:4px;"
                         onchange="app.switchPickSource()"></select>
                     <button class="btn btn-sm" onclick="app.clearCurrentGroup()" title="Clear current group">✕
                         Clear</button>
@@ -57,13 +67,13 @@
                     onkeydown="if(event.key==='Enter')app.doPickSearch()">
                 <div style="font-size:11px;color:var(--text-secondary);margin-bottom:4px;"><span id="pickTotal">0</span>
                     chars · <span id="pickSourceLabel">—</span></div>
-                <div style="max-height:260px;overflow-y:auto;">
-                    <table class="char-table" style="font-size:12px;">
+                <div style="max-height:260px;overflow:auto;">
+                    <table class="char-table pick-table" style="font-size:12px;">
                         <thead>
                             <tr>
-                                <th style="width:30px;">字</th>
-                                <th style="width:55px;">Ref</th>
-                                <th style="width:50px;">读音</th>
+                                <th style="width:28px;">字</th>
+                                <th style="width:64px;">Ref</th>
+                                <th style="width:110px;">读音</th>
                                 <th>含义</th>
                                 <th style="width:26px;"></th>
                             </tr>
@@ -76,7 +86,7 @@
 
             <!-- Current Group (middle) -->
             <div
-                style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px;box-shadow:var(--shadow);">
+                style="flex:1 1 60%;min-width:60%;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px;box-shadow:var(--shadow);">
                 <h3
                     style="font-size:14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;">
                     <span>🧩 Current Alignment Group</span>

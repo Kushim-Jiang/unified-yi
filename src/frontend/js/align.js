@@ -117,8 +117,8 @@ class AlignmentApp {
           return `<tr class="${inGroup ? "selected" : ""}${aligned ? " aligned" : ""}" data-ref="${htmlEscape(c.src_ref)}" onclick="${inGroup ? "" : "app.pickChar('" + htmlEscape(c.src_ref) + "')"}"${aligned ? ' title="点击加载该组"' : ""}>
                     <td class="glyph-cell" style="font-family:${glyphFont(c.font)}">${c.glyph}</td>
                     <td class="src-ref">${htmlEscape(c.src_ref)}</td>
-                    <td style="font-size:10px;color:var(--info);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">/${htmlEscape(c.pronunciation || "")}/</td>
-                    <td style="font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px;">${htmlEscape((c.meaning || "").slice(0, 20))}</td>
+                    <td title="${htmlEscape(c.pronunciation || "")}" style="font-size:10px;color:var(--info);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px;">${pronDisplay(c)}</td>
+                    <td style="font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100px;">${htmlEscape((c.meaning || "").slice(0, 20))}</td>
                     <td class="status-cell" style="text-align:center;">${inGroup ? "✓" : aligned ? "🔗" : "+"}</td>
                 </tr>`;
         })
@@ -292,7 +292,7 @@ class AlignmentApp {
                     <span style="font-family:${glyphFont(c.font)};font-size:22px;">${c.glyph || "?"}</span>
                     <div style="line-height:1.3;">
                         <div style="font-size:12px;"><strong>${htmlEscape(e.source)}</strong> · ${htmlEscape(e.src_ref)}</div>
-                        <div style="font-family:'Gentium Plus',serif;font-size:11px;color:var(--info);">/${htmlEscape(c.pronunciation || "")}/</div>
+                        <div style="font-family:'Gentium Plus',serif;font-size:11px;color:var(--info);">${pronDisplay(c)}</div>
                         <div style="font-size:10px;">${htmlEscape((c.meaning || "").slice(0, 30))}</div>
                     </div>
                     <button class="btn btn-sm btn-danger" onclick="app.removeFromGroup(${i})" title="Remove">✕</button>
@@ -420,7 +420,7 @@ class AlignmentApp {
                             <span style="font-family:${glyphFont(item.font)};font-size:18px;flex-shrink:0;">${item.glyph}</span>
                             <div style="flex:1;min-width:0;">
                                 <div style="display:flex;align-items:baseline;gap:4px;">
-                                    <span style="font-size:10px;color:var(--info);white-space:nowrap;">/${htmlEscape(item.pronunciation)}/</span>
+                                    <span style="font-size:10px;color:var(--info);white-space:nowrap;">${pronDisplay(item)}</span>
                                     <span style="font-size:10px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${htmlEscape(item.src_ref)}</span>
                                 </div>
                                 <div style="font-size:9px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${htmlEscape((item.meaning || "").slice(0, 30))}</div>
@@ -442,7 +442,7 @@ class AlignmentApp {
                         <span style="font-family:${glyphFont(item.font)};font-size:18px;flex-shrink:0;">${item.glyph}</span>
                         <div style="flex:1;min-width:0;">
                             <div style="display:flex;align-items:baseline;gap:4px;">
-                                <span style="font-size:10px;color:var(--info);white-space:nowrap;">/${htmlEscape(item.pronunciation)}/</span>
+                                <span style="font-size:10px;color:var(--info);white-space:nowrap;">${pronDisplay(item)}</span>
                                 <span style="font-size:10px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${htmlEscape((item.meaning || "").slice(0, 25))}</span>
                             </div>
                             <div class="score-bar" style="width:100%;height:3px;margin-top:2px;">
