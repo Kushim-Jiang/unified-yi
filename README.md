@@ -26,9 +26,15 @@ python utils/import_u4.py <U4_整理.xlsx>
 - 原表第 293 页「碗」没有填正体字，`glyph` 用 `？` 占位（同 `u3`）。
 - `pronunciation` 是四省区读音的合录, 不是单个音节, 所以 `SOURCE_META` 标 `"phonetic": "comparative"`:
   不做发音相似度比较（`_char_ipa()` 返回空, 发音建议里也不会混进 `u4` 的字）。
-- 部首列是原表目录里的 37 个部首字形（码位 `U+F6400`–`U+F6424`），原表没有笔画数，
-  所以 `rs/u4.tsv` 的 `other_stroke` 留空。部首页的调色板仍用全局 `rs/rs_order.yaml`，
-  `u4` 自己的 37 个部首由 `/api/radical-data/{source}` 的 `source_radicals` 补在面板末尾。
+- 原表目录里的 37 个部首字形（码位 `U+F6400`–`U+F6424`，原表没有笔画数）保存在
+  `rs/u4_original.tsv`；`rs/u4.tsv` 现在和其他来源一样按 `u0` 的部首体系标注（见下方「部首」）。
+
+### 部首
+
+`rs/*.tsv` 全部按 `u0`（通用彝文字典）的 75 个部首（`rs/rs_order.yaml`）和部首外笔画数标注。
+`u0`、`q0`、`d0` 和 `d8` 的前 605 条是原有的人工标注；其余来源是 2026-11 补的：与已标字形
+同图或几乎同形的直接继承，其余由人工智能对照 `u0` 例字看图判定，**尚未逐字人工复核**，
+笔画数尤其需要核对。
 
 #### Guizhou source
 
