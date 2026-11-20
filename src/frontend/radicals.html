@@ -58,7 +58,9 @@
 
         .rs-card .radical-badge {
             display: inline-block;
-            font-family: var(--glyph-font, "YiFont", "YiFontAlt", "YiFontAltExtra");
+            /* 部首来自全局 rs_order.yaml（u0 体系，码位在 yi.ttf 里），不能跟着来源字体走，
+               否则 d1–d6 / u4 的专用字体里没有这些码位，会回退成系统里的谚文字 */
+            font-family: "YiFont", "YiFontAlt", "YiFontAltExtra";
             font-size: 16px;
             background: var(--accent-bg);
             border: 1px solid var(--border);
