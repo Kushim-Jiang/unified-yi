@@ -128,25 +128,29 @@ function htmlEscape(s) {
  * Return the CSS font-family for a glyph, based on the source's headword font.
  * `font === "yihead"` 的是《彝汉字典》D1–D6 整理包来头，`"yiheadu4"` 的是
  * 《论滇川黔桂彝族文字》U4 对比表来头，两批码位都和 yi.ttf 冲突，只能各自单独渲染
- * （见 style.css 的 @font-face）。
- * @param {string} [font] - 后端 char.font / source.font，'yihead' / 'yiheadu4' / 'yi'
+ * （见 style.css 的 @font-face）。`"tyht"` 是 U3：码位按「通用彝文黑体」tyht.ttf 编排，
+ * 约 3450 个在 yi.ttf 里是别的字，所以 tyht 排第一；yi.ttf 只留作最后回退，
+ * 兜住 tyht 两套都没有的 19 个字。
+ * @param {string} [font] - 后端 char.font / source.font，'yihead' / 'yiheadu4' / 'tyht' / 'yi'
  * @returns {string}
  */
 function glyphFont(font) {
   if (font === "yihead") return "'YiFontHead'";
   if (font === "yiheadu4") return "'YiFontHeadU4'";
+  if (font === "tyht") return "'YiFontAlt','YiFontAltExtra','YiFont'";
   return "'YiFont','YiFontAlt','YiFontAltExtra'";
 }
 
 /**
  * 字形字体的可读名称，用于在界面上标注某个字头用的是哪套字体。
  * 'yi' 实际是 yi.ttf 为主、tyht.ttf/tyht-extra.ttf 逐字回退的三级字体栈。
- * @param {string} [font] - 后端 char.font / source.font，'yihead' / 'yiheadu4' / 'yi'
+ * @param {string} [font] - 后端 char.font / source.font，'yihead' / 'yiheadu4' / 'tyht' / 'yi'
  * @returns {string}
  */
 function glyphFontLabel(font) {
   if (font === "yihead") return "YiHeadwords-D1D6";
   if (font === "yiheadu4") return "YiHeadwords-U4";
+  if (font === "tyht") return "tyht.ttf (通用彝文黑体)";
   return "yi.ttf (+tyht)";
 }
 

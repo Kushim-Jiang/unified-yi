@@ -5,8 +5,10 @@
   src: url("/font/yi.ttf") format("truetype");
 }
 
-/* 回退字体：U3《通用规范彝文常用字字典》有 797 个字不在 yi.ttf 里，
-   这里按字符自动回退（tyht.ttf 覆盖 795 个，tyht-extra.ttf 是另外 2 个的子集）。 */
+/* tyht.ttf 是「通用彝文黑体」。在通用字体栈里它是 yi.ttf 缺字时的逐字回退；
+   U3《通用规范彝文常用字字典》的码位就是按它编排的，所以 u3 单独用
+   'YiFontAlt','YiFontAltExtra','YiFont' 这个顺序（见 ui.js glyphFont），
+   否则约 3450 个字会被 yi.ttf 抢先画成别的字。tyht-extra.ttf 是另外 2 个字的子集。 */
 @font-face {
   font-family: "YiFontAlt";
   src: url("/font/tyht.ttf") format("truetype");

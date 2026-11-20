@@ -26,7 +26,9 @@ class DataLoader:
     # ── 来源元信息 ────────────────────────────────────────────
     # d1–d6 出自《彝汉字典》D1–D6 整理包，字头用 YiHeadwords-D1D6 字体
     # （font="yihead"）；u4 出自《论滇川黔桂彝族文字》第六章对比表，字头和部首用
-    # YiHeadwords-U4（font="yiheadu4"）；其余来源用 font/yi.ttf。详见
+    # YiHeadwords-U4（font="yiheadu4"）；u3 的码位按「通用彝文黑体」tyht.ttf 编排，
+    # 其中约 3450 个与 yi.ttf 里的别的字撞码位，所以 u3 只用 tyht（font="tyht"）；
+    # 其余来源用 font/yi.ttf。详见
     # utils/merge_d1d6.py 和 utils/import_u4.py。
     SOURCE_META: dict[str, dict] = {
         "u0": {"name": "通用彝文字典 (2016)", "region": "通用", "year": 2016, "group": "unified"},
@@ -45,7 +47,7 @@ class DataLoader:
         "d7": {"name": "云南规范彝文字汇本 (1991+)", "region": "云南", "year": 1991, "group": "yunnan"},
         "d8": {"name": "云南省十四种民族文字方案集合", "region": "云南", "year": None, "group": "yunnan"},
         "u2": {"name": "通用彝文规范方案试行通知 (2011)", "region": "通用", "year": 2011, "group": "unified"},
-        "u3": {"name": "通用规范彝文常用字字典", "region": "通用", "year": None, "group": "unified", "phonetic": "yi_pinyin"},
+        "u3": {"name": "通用规范彝文常用字字典", "region": "通用", "year": None, "group": "unified", "phonetic": "yi_pinyin", "font": "tyht"},
         "u4": {"name": "论滇川黔桂彝族文字 第六章对比表 (1988)", "region": "通用", "year": 1988, "group": "unified", "font": "yiheadu4", "phonetic": "comparative"},
     }
 
@@ -138,8 +140,8 @@ class DataLoader:
 
     @classmethod
     def font_of(cls, source: str) -> str:
-        """来源的字头字体：'yihead'（YiHeadwords-D1D6）、'yiheadu4'（YiHeadwords-U4）
-        或 'yi'（font/yi.ttf）。"""
+        """来源的字头字体：'yihead'（YiHeadwords-D1D6）、'yiheadu4'（YiHeadwords-U4）、
+        'tyht'（font/tyht.ttf，u3）或 'yi'（font/yi.ttf）。"""
         return cls.SOURCE_META.get(source, {}).get("font", "yi")
 
     def load_yaml(self, filename: str) -> dict:

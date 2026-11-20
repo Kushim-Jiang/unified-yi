@@ -90,12 +90,15 @@ python utils/merge_d1d6.py <D1-D6_彝汉字典_整理.xlsx>
 
 | 字体 | `SOURCE_META` 的 `font` | 用在哪些来源 | 怎么选中的 |
 | --- | --- | --- | --- |
-| `font/yi.ttf` | `yi` | u0–u3、q0–q3、d0、d7、d8 | 通用字体栈的第一位 |
+| `font/yi.ttf` | `yi` | u0–u2、q0–q3、d0、d7、d8 | 通用字体栈的第一位 |
 | `font/tyht.ttf` + `tyht-extra.ttf` | `yi` | 同上，仅当 `yi.ttf` 缺字时逐字回退 | 同一个栈的后两位，由浏览器按字符回退 |
+| `font/tyht.ttf` + `tyht-extra.ttf`（「通用彝文黑体」） | `tyht` | u3 | `glyphFont()` 指定，顺序为 tyht → tyht-extra → yi.ttf |
 | `font/YiHeadwords-D1D6.otf` | `yihead` | d1–d6 | `glyphFont()` 给这些字形单独指定 |
 | `font/YiHeadwords-U4.otf` | `yiheadu4` | u4 | 同上，`glyphFont()` 指定 |
 
-- 只有 `yihead` / `yiheadu4` / `yi` 这一层是「按来源」显式区分的；`yi.ttf` 与 `tyht*.ttf` 之间是逐字回退，
+- `u3` 的码位是按 `tyht.ttf` 编排的，其中约 3450 个在 `yi.ttf` 里是别的字，放进通用栈会被
+  `yi.ttf` 抢先画错，所以单独标 `font: "tyht"`；`tyht` 两套都没有的 19 个字才回退到 `yi.ttf`。
+- 只有 `yihead` / `yiheadu4` / `tyht` / `yi` 这一层是「按来源」显式区分的；`yi.ttf` 与 `tyht*.ttf` 之间是逐字回退，
   前端拿不到「这个字最终由哪个文件渲染」，所以来源卡片上统一标成 `yi.ttf (+tyht)`。
 - 所有会画字形的界面都走 `glyphFont()`：浏览表、字符详情、相似建议、对齐取字/当前组/关联组、
   分组表、录入表；部首标注页按来源整页设置 `--glyph-font`（`/api/radical-data/{source}` 返回 `font`），
