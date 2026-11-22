@@ -244,9 +244,9 @@ VOWEL_ALIASES = {
 
 
 def parse_syllable(pron: str) -> Tuple[Optional[str], Optional[str], Optional[str]]:
-    # d1 等多音点来源写作 "pi⁵⁵①②③/pi²¹④"：去掉音点圈码，只取第一个读音比较
+    # d1 等多音点来源写作 "pi⁵⁵①②③/pi²¹④"（u0 另有 Ⓛ ⓑ 等字母标号）：去掉音点标号，只取第一个读音比较
     if pron:
-        pron = re.sub(r"[①-⑳]", "", pron)
+        pron = re.sub(r"[①-⑳Ⓐ-ⓩ]", "", pron)
     if not pron or "/" in pron:
         if pron and "/" in pron:
             pron = pron.split("/")[0]
