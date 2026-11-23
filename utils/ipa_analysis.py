@@ -102,7 +102,7 @@ for p in all_prons:
         r"[ⁿᵐᶰᶮᶯ][tdkgbdjzcsrl]?[ʰʱ]?"
         r"(?:[tcdjszrl][͜͡][ʰʱ]?[ɕʑʂʐszrltdc])?"
         r"[aeiouɑɛɔɤɯɚəɨʉɿʅ]+"
-        r"[̰̤̹̜]?"
+        r"[̰̙̤̹̜]?"
         r"[⁰¹²³⁴⁵⁶⁷⁸⁹]+",
         p,
     ):

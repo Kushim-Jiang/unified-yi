@@ -639,8 +639,8 @@ class EntryGrid {
       ["?", "ʔ"],
       // ── Tie bar ──
       ["_", "͡"],
-      // ── Creaky voice (after vowel) ──
-      ["~", "̰"],
+      // ── Tense vowel = retracted tongue root (after vowel) ──
+      ["~", "̙"],
       // ── More rounded (after vowel) ──
       ["o:", "o̹"],
       // Aspiration h after consonant

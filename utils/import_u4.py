@@ -43,6 +43,8 @@ def clean(value) -> str:
         return ""
     text = str(value)
     text = re.sub(r"[\r\n]+", "", text)
+    # 紧元音统一按舌根后缩写 ̙（U+0319）；d6 借词里 n/g 下的短横不是紧元音，保留
+    text = re.sub("(?<![ng])[\u0330\u0331\u0320]", "\u0319", text)
     return text.replace("\t", " ").strip()
 
 

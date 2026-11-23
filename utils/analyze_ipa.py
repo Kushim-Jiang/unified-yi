@@ -14,7 +14,7 @@ IPA_PATTERN = re.compile(
     r"|[ǀǁǃǂ]"  # clicks
     r"|[ɬɮ]"  # laterals
     r"|[ʰʱʷʲˠˤ]"  # diacritics as separate
-    r"|[̴̵̶̷̸̰̥̩̯̤̪̺̻̼̹̍̾˞]"  # combining diacritics
+    r"|[̴̵̶̷̸̰̙̥̩̯̤̪̺̻̼̹̍̾˞]"  # combining diacritics
     r"|[ˈˌːˑ]"  # prosody
     r"|[˥˦˧˨˩]"  # tone letters
     r"|[⁵⁴³²¹⁰]"  # superscript tone numbers

@@ -287,7 +287,7 @@ def parse_syllable(pron: str) -> Tuple[Optional[str], Optional[str], Optional[st
     vowel = vowel_part if vowel_part else None
 
     if vowel:
-        vowel_clean = vowel.rstrip("\u032f\u0330\u0324\u0339\u031e\u031f\u0325\u030a")
+        vowel_clean = vowel.rstrip("\u0319\u0331\u0320\u032f\u0330\u0324\u0339\u031e\u031f\u0325\u030a")
         if vowel_clean in VOWEL_FEATURES:
             vowel = vowel_clean
         elif vowel in VOWEL_FEATURES:
