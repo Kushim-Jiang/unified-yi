@@ -384,6 +384,8 @@ def list_radical_data(source: str):
                     continue
                 if rad not in radical_index and rad not in source_radicals:
                     source_radicals.append(rad)
+        # 来源部首字按码位排：u4 的 PUA 部首和 q1 的贵州本部首（U+C1B0–C20B）码位都是按原书目录顺序造的
+        source_radicals.sort(key=lambda r: [ord(c) for c in r])
 
         return {
             "source": source,
